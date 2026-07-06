@@ -16,6 +16,10 @@ export const fetchSummary = () => getJSON("/api/summary");
 export const fetchAnomalies = () => getJSON("/api/anomalies");
 export const fetchForecast = () => getJSON("/api/forecast");
 export const fetchRecommendations = () => getJSON("/api/recommendations");
+export const fetchAnalytics = (zone = "all", period = "14d") =>
+  getJSON(`/api/analytics?zone=${encodeURIComponent(zone)}&period=${period}`);
+export const fetchAlerts = (zone = "all", severity = "all") =>
+  getJSON(`/api/alerts?zone=${encodeURIComponent(zone)}&severity=${severity}`);
 
 // Opens the live WebSocket. Returns the socket so the caller can close it.
 export function connectLive(onReading) {

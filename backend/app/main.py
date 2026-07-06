@@ -13,6 +13,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import analytics, config, database, simulator
+from . import routes as extra_routes
 
 
 class ConnectionManager:
@@ -73,6 +74,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Smart Energy Monitor API", version="1.0.0", lifespan=lifespan)
+extra_routes.register(app)
 
 # Allow the frontend dev server (and any origin, for hackathon convenience).
 app.add_middleware(

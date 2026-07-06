@@ -1,0 +1,465 @@
+import React, { useState, useEffect, useMemo } from "react";
+import {
+  ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie, Legend,
+  ReferenceLine, LineChart,
+} from "recharts";
+import {
+  TrendingUp, BarChart2, Clock, Calendar, Zap,
+  RefreshCw, ChevronDown, Layers,
+} from "lucide-react";
+import { fetchAnalytics, fetchZones } from "./api";
+
+/* ── constants ──────────────────────────────────────────────── */
+const PERIODS = [
+  { id: "24h", label: "Last 24 h" },
+  { id: "7d",  label: "Last 7 days" },
+  { id: "14d", label: "Last 14 days" },
+];
+
+const ZONE_COLORS = {
+  admin:   "#38BFA1",
+  labs:    "#5AA9E6",
+  hostel:  "#C084E0",
+  library: "#E8A33D",
+};
+
+/* ── helpers ────────────────────────────────────────────────── */
+const fmtHour = (h) => {
+  if (h === 0)  return "12 AM";
+  if (h === 12) return "12 PM";
+  return h < 12 ? `${h} AM` : `${h - 12} PM`;
+};
+
+const fmtTs = (iso) => {
+  const d = new Date(iso);
+  return d.toLocaleString("en-US", { weekday:"short", hour:"numeric", minute:"2-digit", hour12:true });
+};
+
+/* ── shared tooltip ─────────────────────────────────────────── */
+function ChartTooltip({ active, payload, label, unit = "kW" }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{
+      background:"var(--tooltip-bg)", border:"1px solid var(--border)",
+      borderRadius:10, padding:"10px 14px",
+      boxShadow:"0 8px 24px rgba(0,0,0,0.35)", fontSize:12, minWidth:140,
+    }}>
+      <p style={{ color:"var(--text-muted)", marginBottom:6, fontSize:11 }}>{label}</p>
+      {payload.map((p, i) => (
+        <div key={i} style={{ display:"flex", alignItems:"center", gap:6, marginBottom:3 }}>
+          <span style={{ width:8, height:8, borderRadius:"50%", background:p.color || p.stroke, flexShrink:0 }} />
+          <span style={{ color:"var(--text-secondary)", fontSize:11 }}>{p.name}</span>
+          <span style={{ marginLeft:"auto", fontWeight:600, color:p.color || p.stroke, fontFamily:"'IBM Plex Mono',monospace" }}>
+            {typeof p.value === "number" ? p.value.toFixed(1) : p.value} {unit}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── section card ───────────────────────────────────────────── */
+function Section({ title, subtitle, icon: Icon, accent = "#39D98A", children, delay = 0 }) {
+  return (
+    <div className="panel" style={{ animationDelay:`${delay}ms`, marginBottom:16 }}>
+      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:18, flexWrap:"wrap", gap:8 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{
+            width:32, height:32, borderRadius:9,
+            background:`${accent}15`, border:`1px solid ${accent}25`,
+            display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
+          }}>
+            <Icon size={15} color={accent} />
+          </div>
+          <div>
+            <h3 style={{ fontFamily:"'Space Grotesk',sans-serif", fontSize:14, fontWeight:600, margin:0, color:"var(--text-panel-title)" }}>{title}</h3>
+            {subtitle && <p style={{ fontSize:11.5, color:"var(--text-muted)", margin:"2px 0 0" }}>{subtitle}</p>}
+          </div>
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/* ── period + zone selector bar ─────────────────────────────── */
+function Controls({ period, setPeriod, zoneId, setZoneId, zones, loading }) {
+  return (
+    <div style={{
+      display:"flex", alignItems:"center", gap:10, marginBottom:20,
+      flexWrap:"wrap",
+    }}>
+      {/* Period pills */}
+      <div style={{
+        display:"flex", gap:4, background:"var(--bg-card)",
+        border:"1px solid var(--border)", borderRadius:12, padding:4,
+      }}>
+        {PERIODS.map(p => (
+          <button key={p.id} onClick={() => setPeriod(p.id)} style={{
+            padding:"6px 14px", borderRadius:9, fontSize:12.5, fontWeight:500,
+            fontFamily:"'Inter',system-ui,sans-serif", cursor:"pointer",
+            border: period === p.id ? "1px solid rgba(57,217,138,0.35)" : "1px solid transparent",
+            background: period === p.id ? "rgba(57,217,138,0.12)" : "transparent",
+            color: period === p.id ? "#39D98A" : "var(--text-secondary)",
+            transition:"all 0.2s ease",
+          }}>{p.label}</button>
+        ))}
+      </div>
+
+      {/* Zone selector */}
+      <div style={{ position:"relative" }}>
+        <select
+          value={zoneId}
+          onChange={e => setZoneId(e.target.value)}
+          style={{
+            appearance:"none", WebkitAppearance:"none",
+            padding:"8px 36px 8px 14px",
+            background:"var(--bg-card)", border:"1px solid var(--border)",
+            borderRadius:10, color:"var(--text-primary)", fontSize:12.5,
+            fontFamily:"'Inter',system-ui,sans-serif", cursor:"pointer", outline:"none",
+            transition:"border-color 0.2s",
+          }}
+        >
+          <option value="all">All zones</option>
+          {zones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
+        </select>
+        <ChevronDown size={13} style={{
+          position:"absolute", right:10, top:"50%", transform:"translateY(-50%)",
+          color:"var(--text-muted)", pointerEvents:"none",
+        }} />
+      </div>
+
+      {/* Loading spinner */}
+      {loading && (
+        <div style={{ display:"flex", alignItems:"center", gap:6, color:"var(--text-muted)", fontSize:12 }}>
+          <div style={{ width:14, height:14, borderRadius:"50%", border:"2px solid var(--border)", borderTopColor:"#39D98A", animation:"spin-slow 0.7s linear infinite" }} />
+          Updating…
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── custom pie label ───────────────────────────────────────── */
+function PieLabel({ cx, cy, midAngle, innerRadius, outerRadius, name, pct }) {
+  const RADIAN = Math.PI / 180;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  if (pct < 8) return null;
+  return (
+    <text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={600}>
+      {pct}%
+    </text>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════
+   ANALYTICS TAB
+════════════════════════════════════════════════════════════ */
+export default function AnalyticsTab({ isMobile }) {
+  const [period, setPeriod]   = useState("14d");
+  const [zoneId, setZoneId]   = useState("all");
+  const [zones, setZones]     = useState([]);
+  const [data, setData]       = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [activeZones, setActiveZones] = useState({});   // which zones visible in load curve
+
+  /* load zones once */
+  useEffect(() => {
+    fetchZones().then(zs => {
+      setZones(zs);
+      const init = {};
+      zs.forEach(z => { init[z.id] = true; });
+      setActiveZones(init);
+    }).catch(() => {});
+  }, []);
+
+  /* load analytics on period/zone change */
+  useEffect(() => {
+    setLoading(true);
+    fetchAnalytics(zoneId, period)
+      .then(d => { setData(d); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [period, zoneId]);
+
+  const axisColor     = "var(--text-secondary)";
+  const gridColor     = "var(--chart-grid)";
+  const axisLineColor = "var(--chart-axis)";
+
+  /* visible zones for load-curve toggles */
+  const visibleZones = zones.filter(z => activeZones[z.id]);
+
+  /* toggle zone in load curve */
+  const toggleZone = (id) => setActiveZones(prev => ({ ...prev, [id]: !prev[id] }));
+
+  /* skeleton */
+  const Sk = ({ h = 200 }) => (
+    <div className="skeleton" style={{ width:"100%", height:h, borderRadius:10 }} />
+  );
+
+  if (!data && !loading) return (
+    <div style={{ textAlign:"center", padding:"60px 20px", color:"var(--text-muted)" }}>
+      <BarChart2 size={36} style={{ marginBottom:12, opacity:0.4 }} />
+      <p>No analytics data available.</p>
+    </div>
+  );
+
+  const chartH = isMobile ? 200 : 260;
+
+  return (
+    <div style={{ animation:"fadeInUp 0.4s ease both" }}>
+      {/* Controls */}
+      <Controls period={period} setPeriod={setPeriod} zoneId={zoneId} setZoneId={setZoneId} zones={zones} loading={loading} />
+
+      {/* ── Row 1: Baseline vs Actual + Zone Contribution ── */}
+      <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap:16, marginBottom:16 }}>
+
+        {/* 1. Baseline vs Actual */}
+        <Section title="Baseline vs. Actual" subtitle="Shaded band = expected ± 1σ · Line = real usage" icon={TrendingUp} accent="#39D98A">
+          {loading ? <Sk h={chartH} /> : (
+            <ResponsiveContainer width="100%" height={chartH}>
+              <ComposedChart data={data?.baseline_actual || []} margin={{ top:5, right:8, left: isMobile ? -20 : -10, bottom:0 }}>
+                <defs>
+                  <linearGradient id="baseGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor="#39D98A" stopOpacity={0.18} />
+                    <stop offset="95%" stopColor="#39D98A" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke={gridColor} vertical={false} strokeDasharray="3 3" />
+                <XAxis dataKey="ts" tickFormatter={v => fmtTs(v)}
+                  tick={{ fill:axisColor, fontSize:9 }} tickLine={false}
+                  axisLine={{ stroke:axisLineColor }}
+                  interval={Math.max(Math.floor((data?.baseline_actual?.length || 1) / (isMobile ? 4 : 6)), 0)} />
+                <YAxis tick={{ fill:axisColor, fontSize:10 }} tickLine={false}
+                  axisLine={{ stroke:axisLineColor }} unit=" kW" width={isMobile ? 44 : 52} />
+                <Tooltip content={<ChartTooltip />} />
+                {/* Expected band upper */}
+                <Area type="monotone" dataKey="expected_upper" stroke="none"
+                  fill="url(#baseGrad)" name="Expected upper" legendType="none" />
+                {/* Expected lower fills to zero */}
+                <Area type="monotone" dataKey="expected_lower" stroke="none"
+                  fill="var(--bg-panel)" name="Expected lower" legendType="none" />
+                {/* Expected mean line */}
+                <Line type="monotone" dataKey="expected_kw" stroke="#39D98A"
+                  strokeWidth={1.5} strokeDasharray="5 3" dot={false} name="Expected (baseline)" />
+                {/* Actual line */}
+                <Line type="monotone" dataKey="kw" stroke="#58A6FF"
+                  strokeWidth={2} dot={false} name="Actual (kW)" />
+              </ComposedChart>
+            </ResponsiveContainer>
+          )}
+          {/* Legend */}
+          <div style={{ display:"flex", gap:16, marginTop:10, flexWrap:"wrap" }}>
+            {[
+              { color:"#58A6FF", label:"Actual usage", dash:false },
+              { color:"#39D98A", label:"Expected baseline", dash:true },
+              { color:"rgba(57,217,138,0.2)", label:"±1σ band", dash:false, isArea:true },
+            ].map((l, i) => (
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:6, fontSize:11, color:"var(--text-secondary)" }}>
+                {l.isArea
+                  ? <span style={{ width:20, height:8, borderRadius:3, background:l.color, display:"inline-block" }} />
+                  : <svg width={20} height={2}>
+                      <line x1="0" y1="1" x2="20" y2="1"
+                        stroke={l.color} strokeWidth={l.dash ? 1.5 : 2}
+                        strokeDasharray={l.dash ? "5 3" : undefined} />
+                    </svg>
+                }
+                {l.label}
+              </div>
+            ))}
+          </div>
+        </Section>
+
+        {/* 2. Zone Contribution Pie */}
+        <Section title="Zone Contribution" subtitle={`Share of total campus load · ${period}`} icon={Layers} accent="#A78BFA">
+          {loading ? <Sk h={chartH} /> : (
+            <>
+              <ResponsiveContainer width="100%" height={isMobile ? 180 : 200}>
+                <PieChart>
+                  <Pie
+                    data={data?.zone_contribution || []}
+                    cx="50%" cy="50%"
+                    innerRadius={isMobile ? 45 : 55} outerRadius={isMobile ? 75 : 90}
+                    paddingAngle={3}
+                    dataKey="total_kwh"
+                    nameKey="name"
+                    labelLine={false}
+                    label={PieLabel}
+                  >
+                    {(data?.zone_contribution || []).map((e, i) => (
+                      <Cell key={i} fill={e.color} stroke="var(--bg-panel)" strokeWidth={2} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(v, n, p) => [`${v.toLocaleString()} kWh (${p.payload.pct}%)`, p.payload.name]}
+                    contentStyle={{ background:"var(--tooltip-bg)", border:"1px solid var(--border)", borderRadius:10, fontSize:12 }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              {/* Legend */}
+              <div style={{ display:"flex", flexDirection:"column", gap:7, marginTop:4 }}>
+                {(data?.zone_contribution || []).map((z, i) => (
+                  <div key={i} style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <span style={{ width:10, height:10, borderRadius:3, background:z.color, flexShrink:0 }} />
+                    <span style={{ fontSize:12, color:"var(--text-secondary)", flex:1 }}>{z.name}</span>
+                    <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:11, color:z.color, fontWeight:600 }}>
+                      {z.pct}%
+                    </span>
+                    <span style={{ fontSize:11, color:"var(--text-muted)" }}>{z.total_kwh.toLocaleString()} kWh</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </Section>
+      </div>
+
+      {/* ── Row 2: Load Curve + Weekday vs Weekend ── */}
+      <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap:16, marginBottom:16 }}>
+
+        {/* 3. Load Curve by Hour */}
+        <Section title="Load Curve by Hour of Day" subtitle="Avg consumption per hour — where peaks live" icon={Clock} accent="#F0B429" delay={80}>
+          {/* Zone toggles */}
+          <div style={{ display:"flex", gap:6, marginBottom:14, flexWrap:"wrap" }}>
+            {zones.map(z => (
+              <button key={z.id} onClick={() => toggleZone(z.id)} style={{
+                display:"flex", alignItems:"center", gap:5,
+                padding:"4px 10px", borderRadius:8, fontSize:11.5, fontWeight:500,
+                fontFamily:"'Inter',system-ui,sans-serif", cursor:"pointer",
+                border:`1px solid ${activeZones[z.id] ? z.color : "var(--border)"}`,
+                background: activeZones[z.id] ? `${z.color}12` : "transparent",
+                color: activeZones[z.id] ? z.color : "var(--text-muted)",
+                transition:"all 0.2s ease",
+              }}>
+                <span style={{ width:7, height:7, borderRadius:"50%", background: activeZones[z.id] ? z.color : "var(--border)" }} />
+                {z.name}
+              </button>
+            ))}
+          </div>
+          {loading ? <Sk h={chartH} /> : (
+            <ResponsiveContainer width="100%" height={chartH}>
+              <LineChart data={data?.load_curve || []} margin={{ top:5, right:8, left: isMobile ? -20 : -10, bottom:0 }}>
+                <CartesianGrid stroke={gridColor} vertical={false} strokeDasharray="3 3" />
+                <XAxis dataKey="hour" tickFormatter={fmtHour}
+                  tick={{ fill:axisColor, fontSize:isMobile ? 8 : 10 }} tickLine={false}
+                  axisLine={{ stroke:axisLineColor }} interval={isMobile ? 5 : 3} />
+                <YAxis tick={{ fill:axisColor, fontSize:10 }} tickLine={false}
+                  axisLine={{ stroke:axisLineColor }} unit=" kW" width={isMobile ? 40 : 50} />
+                <Tooltip content={<ChartTooltip />} labelFormatter={fmtHour} />
+                {/* Peak reference line */}
+                {data?.peak_hour != null && (
+                  <ReferenceLine x={data.peak_hour} stroke="#FF6B6B" strokeDasharray="4 3"
+                    label={{ value:"Peak", fill:"#FF6B6B", fontSize:10, position:"top" }} />
+                )}
+                {zones.filter(z => activeZones[z.id]).map(z => (
+                  <Line key={z.id} type="monotone" dataKey={z.id} name={z.name}
+                    stroke={z.color} strokeWidth={2} dot={false} />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </Section>
+
+        {/* 4. Weekday vs Weekend */}
+        <Section title="Weekday vs. Weekend" subtitle="Occupancy-driven load vs. always-on standby floor" icon={Calendar} accent="#22D3EE" delay={160}>
+          {/* Zone selector for this chart */}
+          <div style={{ display:"flex", gap:6, marginBottom:14, flexWrap:"wrap" }}>
+            {zones.map(z => (
+              <button key={z.id} onClick={() => setZoneId(z.id === zoneId ? "all" : z.id)} style={{
+                display:"flex", alignItems:"center", gap:5,
+                padding:"4px 10px", borderRadius:8, fontSize:11.5, fontWeight:500,
+                fontFamily:"'Inter',system-ui,sans-serif", cursor:"pointer",
+                border:`1px solid ${(zoneId === z.id || zoneId === "all") ? z.color : "var(--border)"}`,
+                background: (zoneId === z.id || zoneId === "all") ? `${z.color}12` : "transparent",
+                color: (zoneId === z.id || zoneId === "all") ? z.color : "var(--text-muted)",
+                transition:"all 0.2s ease",
+              }}>
+                <span style={{ width:7, height:7, borderRadius:"50%", background: (zoneId === z.id || zoneId === "all") ? z.color : "var(--border)" }} />
+                {z.name}
+              </button>
+            ))}
+          </div>
+          {loading ? <Sk h={chartH} /> : (
+            <ResponsiveContainer width="100%" height={chartH}>
+              <LineChart data={data?.weekday_vs_weekend || []} margin={{ top:5, right:8, left: isMobile ? -20 : -10, bottom:0 }}>
+                <CartesianGrid stroke={gridColor} vertical={false} strokeDasharray="3 3" />
+                <XAxis dataKey="hour" tickFormatter={fmtHour}
+                  tick={{ fill:axisColor, fontSize: isMobile ? 8 : 10 }} tickLine={false}
+                  axisLine={{ stroke:axisLineColor }} interval={isMobile ? 5 : 3} />
+                <YAxis tick={{ fill:axisColor, fontSize:10 }} tickLine={false}
+                  axisLine={{ stroke:axisLineColor }} unit=" kW" width={isMobile ? 40 : 50} />
+                <Tooltip content={<ChartTooltip />} labelFormatter={fmtHour} />
+                {(zoneId === "all" ? zones : zones.filter(z => z.id === zoneId)).map(z => (
+                  <React.Fragment key={z.id}>
+                    <Line type="monotone" dataKey={`${z.id}_weekday`} name={`${z.name} (Weekday)`}
+                      stroke={z.color} strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey={`${z.id}_weekend`} name={`${z.name} (Weekend)`}
+                      stroke={z.color} strokeWidth={1.5} strokeDasharray="5 3" dot={false} opacity={0.65} />
+                  </React.Fragment>
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+          <div style={{ display:"flex", gap:16, marginTop:10, flexWrap:"wrap" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:6, fontSize:11, color:"var(--text-secondary)" }}>
+              <svg width={20} height={2}><line x1="0" y1="1" x2="20" y2="1" stroke="#7D8590" strokeWidth={2} /></svg>
+              Weekday
+            </div>
+            <div style={{ display:"flex", alignItems:"center", gap:6, fontSize:11, color:"var(--text-secondary)" }}>
+              <svg width={20} height={2}><line x1="0" y1="1" x2="20" y2="1" stroke="#7D8590" strokeWidth={1.5} strokeDasharray="5 3" /></svg>
+              Weekend
+            </div>
+          </div>
+        </Section>
+      </div>
+
+      {/* ── Row 3: Peak Forecast ── */}
+      <Section title="Peak Demand Forecast" subtitle="Predicted hourly campus-wide load — 7-day rolling average" icon={Zap} accent="#FF6B6B" delay={240}>
+        {loading ? <Sk h={isMobile ? 160 : 200} /> : (
+          <ResponsiveContainer width="100%" height={isMobile ? 160 : 200}>
+            <ComposedChart data={data?.forecast_curve || []} margin={{ top:5, right:8, left: isMobile ? -20 : -10, bottom:0 }}>
+              <defs>
+                <linearGradient id="forecastGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%"  stopColor="#FF6B6B" stopOpacity={0.2} />
+                  <stop offset="95%" stopColor="#FF6B6B" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid stroke={gridColor} vertical={false} strokeDasharray="3 3" />
+              <XAxis dataKey="hour" tickFormatter={fmtHour}
+                tick={{ fill:axisColor, fontSize: isMobile ? 8 : 10 }} tickLine={false}
+                axisLine={{ stroke:axisLineColor }} interval={isMobile ? 5 : 2} />
+              <YAxis tick={{ fill:axisColor, fontSize:10 }} tickLine={false}
+                axisLine={{ stroke:axisLineColor }} unit=" kW" width={isMobile ? 44 : 52} />
+              <Tooltip content={<ChartTooltip />} labelFormatter={fmtHour} />
+              {/* Peak window highlight */}
+              {data?.peak_hour != null && (
+                <ReferenceLine x={data.peak_hour} stroke="#FF6B6B" strokeWidth={2} strokeDasharray="4 3"
+                  label={{ value:`Peak ${data.peak_kw} kW`, fill:"#FF6B6B", fontSize:10, position:"insideTopRight" }} />
+              )}
+              <Area type="monotone" dataKey="kw" fill="url(#forecastGrad)" stroke="none" />
+              <Line type="monotone" dataKey="kw" name="Forecast (kW)"
+                stroke="#FF6B6B" strokeWidth={2.5} dot={false} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        )}
+        {/* Insight callout */}
+        {data?.peak_hour != null && !loading && (
+          <div style={{
+            marginTop:14, padding:"10px 14px",
+            background:"rgba(255,107,107,0.06)", border:"1px solid rgba(255,107,107,0.2)",
+            borderRadius:10, fontSize:12.5, color:"var(--text-secondary)", lineHeight:1.6,
+          }}>
+            ⚡ <span style={{ color:"#FF6B6B", fontWeight:600 }}>Predicted peak</span> of{" "}
+            <span style={{ fontFamily:"'IBM Plex Mono',monospace", color:"var(--text-primary)" }}>
+              {data.peak_kw} kW
+            </span>{" "}
+            at <strong style={{ color:"var(--text-primary)" }}>{fmtHour(data.peak_hour)}</strong>.
+            Pre-cooling 30–45 min earlier can flatten this by an estimated <strong style={{ color:"#39D98A" }}>12%</strong>.
+          </div>
+        )}
+      </Section>
+    </div>
+  );
+}
