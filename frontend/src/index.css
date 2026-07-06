@@ -1,0 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Dark theme (default) ─────────────────────────────────── */
+:root, [data-theme="dark"] {
+  --bg-page:        #0F1416;
+  --bg-card:        #171D20;
+  --bg-panel:       #12181A;
+  --bg-rec:         #141A1C;
+  --bg-zone-active: #1B2326;
+  --bg-code:        #1B2326;
+
+  --border:         #232B2E;
+  --border-panel:   #1E2528;
+
+  --text-primary:   #EDF2F2;
+  --text-secondary: #8A9598;
+  --text-muted:     #5F6B6E;
+  --text-panel-title: #C7D0D1;
+
+  --tooltip-bg:     #171D20;
+  --chart-grid:     #1E2528;
+  --chart-axis:     #232B2E;
+
+  --toggle-bg:      #232B2E;
+  --toggle-icon:    #8A9598;
+}
+
+/* ─── Light theme ───────────────────────────────────────────── */
+[data-theme="light"] {
+  --bg-page:        #F4F6F7;
+  --bg-card:        #FFFFFF;
+  --bg-panel:       #FFFFFF;
+  --bg-rec:         #F8F9FA;
+  --bg-zone-active: #E8ECEE;
+  --bg-code:        #E8ECEE;
+
+  --border:         #DDE2E4;
+  --border-panel:   #E4E8EA;
+
+  --text-primary:   #1A2224;
+  --text-secondary: #5A6A6E;
+  --text-muted:     #8A9598;
+  --text-panel-title: #2E3C40;
+
+  --tooltip-bg:     #FFFFFF;
+  --chart-grid:     #E8ECEE;
+  --chart-axis:     #DDE2E4;
+
+  --toggle-bg:      #E0E5E7;
+  --toggle-icon:    #5A6A6E;
+}
+
+/* ─── Transition all themed properties smoothly ─────────────── */
+*, *::before, *::after {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.2s ease;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
