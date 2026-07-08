@@ -10,22 +10,22 @@ function BgOrbs() {
   return (
     <>
       <div className="auth-bg-orb" style={{
-        width: 500, height: 500,
-        background: "radial-gradient(circle, rgba(57,217,138,0.12) 0%, transparent 70%)",
-        top: "-150px", left: "-100px",
+        width: 600, height: 600,
+        background: "radial-gradient(circle, rgba(57,217,138,0.15) 0%, transparent 60%)",
+        top: "-150px", left: "-150px",
         animation: "float 8s ease-in-out infinite",
       }} />
       <div className="auth-bg-orb" style={{
-        width: 400, height: 400,
-        background: "radial-gradient(circle, rgba(88,166,255,0.1) 0%, transparent 70%)",
-        bottom: "0px", right: "200px",
+        width: 500, height: 500,
+        background: "radial-gradient(circle, rgba(88,166,255,0.12) 0%, transparent 60%)",
+        bottom: "-100px", right: "-100px",
         animation: "float 10s ease-in-out infinite reverse",
         animationDelay: "2s",
       }} />
       <div className="auth-bg-orb" style={{
-        width: 300, height: 300,
-        background: "radial-gradient(circle, rgba(167,139,250,0.08) 0%, transparent 70%)",
-        top: "40%", left: "30%",
+        width: 400, height: 400,
+        background: "radial-gradient(circle, rgba(167,139,250,0.1) 0%, transparent 60%)",
+        top: "30%", left: "40%",
         animation: "float 12s ease-in-out infinite",
         animationDelay: "4s",
       }} />
@@ -34,26 +34,41 @@ function BgOrbs() {
 }
 
 /* ── Feature pill ───────────────────────────────────────────── */
-function FeaturePill({ icon: Icon, label, color }) {
+function FeaturePill({ icon: Icon, label, color, delay }) {
   return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 10,
-      padding: "12px 16px",
-      background: "rgba(13,17,23,0.6)",
-      border: `1px solid ${color}30`,
-      borderRadius: 12,
-      backdropFilter: "blur(12px)",
-      marginBottom: 10,
-    }}>
+    <div className="auth-pill" style={{
+      display: "flex", alignItems: "center", gap: 12,
+      padding: "16px 20px",
+      background: "rgba(13,17,23,0.5)",
+      border: `1px solid ${color}40`,
+      borderRadius: 16,
+      backdropFilter: "blur(20px)",
+      WebkitBackdropFilter: "blur(20px)",
+      marginBottom: 14,
+      boxShadow: `0 8px 32px rgba(0,0,0,0.2), inset 0 0 20px ${color}05`,
+      animation: `fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both`,
+      animationDelay: `${delay}ms`,
+      transition: "transform 0.3s ease, box-shadow 0.3s ease",
+    }}
+    onMouseEnter={e => {
+      e.currentTarget.style.transform = "translateX(10px) translateY(-2px)";
+      e.currentTarget.style.boxShadow = `0 12px 40px rgba(0,0,0,0.3), inset 0 0 20px ${color}20`;
+    }}
+    onMouseLeave={e => {
+      e.currentTarget.style.transform = "translateX(0) translateY(0)";
+      e.currentTarget.style.boxShadow = `0 8px 32px rgba(0,0,0,0.2), inset 0 0 20px ${color}05`;
+    }}
+    >
       <div style={{
-        width: 32, height: 32, borderRadius: 8,
-        background: `${color}20`,
+        width: 38, height: 38, borderRadius: 12,
+        background: `linear-gradient(135deg, ${color}20, ${color}50)`,
         display: "flex", alignItems: "center", justifyContent: "center",
         flexShrink: 0,
+        boxShadow: `0 0 15px ${color}40`
       }}>
-        <Icon size={16} color={color} />
+        <Icon size={18} color={color} />
       </div>
-      <span style={{ fontSize: 13.5, color: "#CDD9E5", fontWeight: 500 }}>{label}</span>
+      <span style={{ fontSize: 15, color: "#E6EDF3", fontWeight: 500, letterSpacing: 0.3 }}>{label}</span>
     </div>
   );
 }
@@ -81,16 +96,17 @@ function PasswordStrength({ password }) {
 
   return (
     <div style={{ marginTop: 8, marginBottom: 4 }}>
-      <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
+      <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
         {[1, 2, 3, 4].map((i) => (
           <div key={i} style={{
-            flex: 1, height: 3, borderRadius: 99,
-            background: i <= level ? color : "var(--border)",
-            transition: "background 0.3s ease",
+            flex: 1, height: 4, borderRadius: 99,
+            background: i <= level ? color : "rgba(255,255,255,0.1)",
+            boxShadow: i <= level ? `0 0 10px ${color}80` : "none",
+            transition: "all 0.3s ease",
           }} />
         ))}
       </div>
-      <span style={{ fontSize: 11, color, fontWeight: 500 }}>{label}</span>
+      <span style={{ fontSize: 12, color, fontWeight: 600 }}>{label}</span>
     </div>
   );
 }
@@ -99,29 +115,80 @@ function PasswordStrength({ password }) {
 function SocialBtn({ icon: Icon, label, color }) {
   return (
     <button style={{
-      display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-      flex: 1, padding: "11px 16px",
-      background: "var(--bg-input)",
-      border: "1px solid var(--border-input)",
+      display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+      flex: 1, padding: "12px 16px",
+      background: "rgba(13,17,23,0.5)",
+      border: "1px solid rgba(255,255,255,0.1)",
       borderRadius: 12,
       color: "var(--text-secondary)",
-      fontSize: 13, fontFamily: "'Inter', system-ui, sans-serif",
+      fontSize: 14, fontWeight: 500, fontFamily: "'Inter', system-ui, sans-serif",
       cursor: "pointer",
-      transition: "all 0.2s ease",
+      transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
     }}
     onMouseEnter={e => {
       e.currentTarget.style.borderColor = color;
       e.currentTarget.style.color = color;
-      e.currentTarget.style.background = `${color}10`;
+      e.currentTarget.style.background = `${color}15`;
+      e.currentTarget.style.transform = "translateY(-3px)";
+      e.currentTarget.style.boxShadow = `0 10px 20px ${color}20`;
     }}
     onMouseLeave={e => {
-      e.currentTarget.style.borderColor = "var(--border-input)";
+      e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
       e.currentTarget.style.color = "var(--text-secondary)";
-      e.currentTarget.style.background = "var(--bg-input)";
+      e.currentTarget.style.background = "rgba(13,17,23,0.5)";
+      e.currentTarget.style.transform = "translateY(0)";
+      e.currentTarget.style.boxShadow = "none";
     }}>
-      <Icon size={15} />
+      <Icon size={18} />
       {label}
     </button>
+  );
+}
+
+/* ── Input Wrapper ──────────────────────────────────────────── */
+function InputField({ icon: Icon, type, placeholder, value, onChange, delay, isPassword }) {
+  const [showPass, setShowPass] = useState(false);
+  const [focused, setFocused] = useState(false);
+
+  return (
+    <div style={{ animation: `fadeInUp 0.5s ease both`, animationDelay: `${delay}ms` }}>
+      <div style={{ position: "relative", marginTop: 4 }}>
+        <Icon size={18} style={{ 
+          position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", 
+          color: focused ? "#58A6FF" : "var(--text-muted)", transition: "color 0.3s ease" 
+        }} />
+        <input
+          type={isPassword && !showPass ? "password" : type}
+          placeholder={placeholder}
+          value={value} onChange={onChange}
+          style={{
+            width: "100%", padding: "16px 16px 16px 46px",
+            background: focused ? "rgba(13,17,23,0.9)" : "rgba(13,17,23,0.5)", 
+            border: `1px solid ${focused ? "#58A6FF" : "rgba(255,255,255,0.1)"}`,
+            borderRadius: 14, color: "var(--text-primary)", fontSize: 15,
+            transition: "all 0.3s ease", outline: "none",
+            boxShadow: focused ? "0 0 0 4px rgba(88,166,255,0.15), inset 0 0 10px rgba(88,166,255,0.1)" : "none"
+          }}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+        />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPass(!showPass)}
+            style={{
+              position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)",
+              background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer",
+              padding: 4, transition: "color 0.2s"
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = "var(--text-primary)"}
+            onMouseLeave={e => e.currentTarget.style.color = "var(--text-muted)"}
+          >
+            {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -129,180 +196,157 @@ function SocialBtn({ icon: Icon, label, color }) {
 export function SignIn({ onSignIn, onGoSignUp }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => { setMounted(true); }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     if (!email || !password) { setError("Please fill in all fields."); return; }
     setLoading(true);
-    // Simulate auth (replace with real API call)
-    await new Promise(r => setTimeout(r, 1200));
+    await new Promise(r => setTimeout(r, 1500));
     setLoading(false);
     onSignIn({ email, name: email.split("@")[0] });
   };
 
   return (
-    <div className="auth-root" style={{ background: "var(--bg-page)" }}>
+    <div className="auth-root" style={{ background: "var(--bg-page)", overflow: "hidden" }}>
       <BgOrbs />
 
       {/* Left panel — branding */}
       <div className="auth-left">
-        <div style={{ maxWidth: 460 }}>
+        <div style={{ maxWidth: 480 }}>
           <div className="animate-fadeInUp" style={{ marginBottom: 40 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
               <div style={{
-                width: 44, height: 44, borderRadius: 12,
+                width: 48, height: 48, borderRadius: 14,
                 background: "linear-gradient(135deg, #39D98A, #22D3EE)",
                 display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "0 0 20px rgba(57,217,138,0.4), inset 0 0 10px rgba(255,255,255,0.5)"
               }}>
-                <Zap size={22} color="#080C10" fill="#080C10" />
+                <Zap size={24} color="#080C10" fill="#080C10" />
               </div>
               <span style={{
                 fontFamily: "'Space Grotesk', sans-serif",
-                fontSize: 20, fontWeight: 700, color: "var(--text-primary)",
-              }}>EnergyIQ</span>
+                fontSize: 24, fontWeight: 700, color: "var(--text-primary)", letterSpacing: 1
+              }}>Energy<span className="gradient-text font-normal" style={{fontWeight: 400}}>IQ</span></span>
             </div>
             <h2 style={{
               fontFamily: "'Space Grotesk', sans-serif",
-              fontSize: 38, fontWeight: 700,
-              color: "var(--text-primary)", lineHeight: 1.2,
-              marginBottom: 16,
+              fontSize: 54, fontWeight: 800,
+              color: "var(--text-primary)", lineHeight: 1.1,
+              marginBottom: 20, letterSpacing: -1.5
             }}>
-              Monitor your campus<br />
-              <span className="gradient-text">energy in real-time</span>
+              Monitor campus<br />
+              <span className="gradient-text glow-text">energy in real-time</span>
             </h2>
-            <p style={{ fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.7 }}>
+            <p style={{ fontSize: 17, color: "var(--text-secondary)", lineHeight: 1.6, maxWidth: "95%" }}>
               AI-powered anomaly detection, live WebSocket feeds, and predictive
-              analytics — all in one dashboard.
+              analytics — all in one visually stunning dashboard.
             </p>
           </div>
 
-          <div className="animate-fadeInUp delay-200">
-            <FeaturePill icon={Activity} label="Live 15-minute zone monitoring" color="#39D98A" />
-            <FeaturePill icon={TrendingUp} label="Forecast peak demand with AI" color="#58A6FF" />
-            <FeaturePill icon={Shield} label="Anomaly detection & smart alerts" color="#A78BFA" />
-            <FeaturePill icon={Leaf} label="Reduce carbon footprint & costs" color="#22D3EE" />
+          <div>
+            <FeaturePill icon={Activity} label="Live 15-minute zone monitoring" color="#39D98A" delay={200} />
+            <FeaturePill icon={TrendingUp} label="Forecast peak demand with AI" color="#58A6FF" delay={350} />
+            <FeaturePill icon={Shield} label="Anomaly detection & smart alerts" color="#A78BFA" delay={500} />
+            <FeaturePill icon={Leaf} label="Reduce carbon footprint & costs" color="#22D3EE" delay={650} />
           </div>
         </div>
       </div>
 
       {/* Right panel — form */}
       <div className="auth-right">
-        <div className="auth-card animate-slideRight">
-          <div style={{ marginBottom: 32, textAlign: "center" }}>
+        <div className="auth-card" style={{
+          background: "var(--bg-glass)",
+          backdropFilter: "blur(30px)",
+          WebkitBackdropFilter: "blur(30px)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.02)",
+          borderRadius: 24,
+          padding: "40px",
+          width: "100%", maxWidth: 440,
+          animation: "scaleIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both"
+        }}>
+          <div style={{ marginBottom: 36, textAlign: "center" }}>
             <h1 style={{
               fontFamily: "'Space Grotesk', sans-serif",
-              fontSize: 26, fontWeight: 700,
-              color: "var(--text-primary)", marginBottom: 8,
-            }}>Welcome back</h1>
-            <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
-              Sign in to your EnergyIQ account
-            </p>
+              fontSize: 28, fontWeight: 700, color: "var(--text-primary)", marginBottom: 8
+            }}>Welcome Back</h1>
+            <p style={{ color: "var(--text-muted)", fontSize: 15 }}>Sign in to manage your grid</p>
           </div>
 
-          {/* Social logins */}
-          <div style={{ display: "flex", gap: 10, marginBottom: 4 }}>
-            <SocialBtn icon={Github} label="GitHub" color="#7D8590" />
-            <SocialBtn icon={Chrome} label="Google" color="#4285F4" />
+          <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
+            <SocialBtn icon={Github} label="GitHub" color="#E6EDF3" />
+            <SocialBtn icon={Chrome} label="Google" color="#FF6B6B" />
           </div>
 
-          <div className="auth-divider">or continue with email</div>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 12, margin: "24px 0",
+            color: "var(--text-muted)", fontSize: 12, fontWeight: 500, textTransform: "uppercase"
+          }}>
+            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.1)" }} />
+            <span>or continue with email</span>
+            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.1)" }} />
+          </div>
 
-          <form onSubmit={handleSubmit} noValidate>
-            {/* Email */}
-            <div className="auth-input-wrap">
-              <Mail size={16} className="auth-input-icon" />
-              <input
-                type="email"
-                className="auth-input"
-                placeholder="you@campus.edu"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                autoComplete="email"
-              />
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <InputField icon={Mail} type="email" placeholder="name@university.edu" value={email} onChange={e => setEmail(e.target.value)} delay={100} />
+            <div>
+              <InputField icon={Lock} type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} delay={200} isPassword />
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+                <a href="#" style={{ color: "#58A6FF", fontSize: 13, textDecoration: "none", fontWeight: 500 }}>Forgot password?</a>
+              </div>
             </div>
 
-            {/* Password */}
-            <div className="auth-input-wrap" style={{ position: "relative" }}>
-              <Lock size={16} className="auth-input-icon" />
-              <input
-                type={showPass ? "text" : "password"}
-                className="auth-input"
-                placeholder="Your password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                autoComplete="current-password"
-                style={{ paddingRight: 44 }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPass(v => !v)}
-                style={{
-                  position: "absolute", right: 14, top: "50%",
-                  transform: "translateY(-50%)",
-                  background: "none", border: "none",
-                  color: "var(--text-muted)", cursor: "pointer", padding: 0,
-                  display: "flex",
-                }}
-              >
-                {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-
-            {/* Forgot */}
-            <div style={{ textAlign: "right", marginBottom: 20, marginTop: -8 }}>
-              <button type="button" className="auth-link" style={{ fontSize: 12 }}>
-                Forgot password?
-              </button>
-            </div>
-
-            {/* Error */}
             {error && (
               <div style={{
-                padding: "10px 14px", borderRadius: 10,
-                background: "rgba(255,107,107,0.08)",
-                border: "1px solid rgba(255,107,107,0.3)",
-                color: "#FF6B6B", fontSize: 13, marginBottom: 16,
-              }}>{error}</div>
+                color: "#FF6B6B", fontSize: 14, background: "rgba(255,107,107,0.15)",
+                padding: "12px", borderRadius: 12, border: "1px solid rgba(255,107,107,0.3)",
+                animation: "shake 0.4s ease", textAlign: "center", fontWeight: 500
+              }}>
+                {error}
+              </div>
             )}
 
-            {/* Submit */}
             <button
               type="submit"
-              className="btn-glow"
               disabled={loading}
               style={{
-                width: "100%", padding: "14px",
-                fontSize: 15, letterSpacing: 0.2,
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                opacity: loading ? 0.7 : 1,
+                width: "100%", padding: "16px", marginTop: 16,
+                background: "linear-gradient(135deg, #39D98A, #22D3EE, #58A6FF)",
+                backgroundSize: "200% auto",
+                border: "none", borderRadius: 14,
+                color: "#080C10", fontSize: 16, fontWeight: 700,
+                cursor: loading ? "not-allowed" : "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+                boxShadow: "0 8px 20px rgba(57,217,138,0.4), inset 0 0 10px rgba(255,255,255,0.4)",
+                animation: "fadeInUp 0.5s ease both, gradient-x 3s linear infinite",
+                animationDelay: "400ms",
               }}
+              onMouseEnter={e => { if(!loading) { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 12px 25px rgba(57,217,138,0.6), inset 0 0 15px rgba(255,255,255,0.5)"; } }}
+              onMouseLeave={e => { if(!loading) { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(57,217,138,0.4), inset 0 0 10px rgba(255,255,255,0.4)"; } }}
             >
               {loading ? (
-                <>
-                  <div style={{
-                    width: 16, height: 16, borderRadius: "50%",
-                    border: "2px solid rgba(8,12,16,0.3)",
-                    borderTopColor: "#080C10",
-                    animation: "spin-slow 0.6s linear infinite",
-                  }} />
-                  Signing in…
-                </>
+                <div style={{ width: 22, height: 22, border: "3px solid rgba(8,12,16,0.2)", borderTopColor: "#080C10", borderRadius: "50%", animation: "spin-slow 0.8s linear infinite" }} />
               ) : (
-                <>Sign in <ArrowRight size={16} /></>
+                <>Sign in securely <ArrowRight size={18} /></>
               )}
             </button>
           </form>
 
-          <p style={{ textAlign: "center", marginTop: 24, fontSize: 13.5, color: "var(--text-secondary)" }}>
+          <p style={{
+            textAlign: "center", marginTop: 32, fontSize: 14, color: "var(--text-muted)",
+            animation: "fadeInUp 0.5s ease both", animationDelay: "500ms"
+          }}>
             Don't have an account?{" "}
-            <button className="auth-link" onClick={onGoSignUp}>Create one</button>
+            <button onClick={onGoSignUp} style={{
+              background: "none", border: "none", color: "#39D98A", fontSize: 14,
+              fontWeight: 600, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 4
+            }}>
+              Request access
+            </button>
           </p>
         </div>
       </div>
@@ -315,238 +359,150 @@ export function SignUp({ onSignUp, onGoSignIn }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [showPass, setShowPass] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [agreed, setAgreed] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    if (!name || !email || !password || !confirm) { setError("Please fill in all fields."); return; }
-    if (password !== confirm) { setError("Passwords don't match."); return; }
+    if (!name || !email || !password) { setError("Please fill in all fields."); return; }
     if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
-    if (!agreed) { setError("Please accept the terms to continue."); return; }
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1400));
+    await new Promise(r => setTimeout(r, 1500));
     setLoading(false);
     onSignUp({ email, name });
   };
 
   return (
-    <div className="auth-root" style={{ background: "var(--bg-page)" }}>
+    <div className="auth-root" style={{ background: "var(--bg-page)", overflow: "hidden" }}>
       <BgOrbs />
 
-      {/* Left panel */}
       <div className="auth-left">
-        <div style={{ maxWidth: 460 }}>
-          <div className="animate-fadeInUp" style={{ marginBottom: 32 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
+        <div style={{ maxWidth: 480 }}>
+          <div className="animate-fadeInUp" style={{ marginBottom: 40 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
               <div style={{
-                width: 44, height: 44, borderRadius: 12,
-                background: "linear-gradient(135deg, #39D98A, #22D3EE)",
+                width: 48, height: 48, borderRadius: 14,
+                background: "linear-gradient(135deg, #58A6FF, #A78BFA)",
                 display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "0 0 20px rgba(88,166,255,0.4), inset 0 0 10px rgba(255,255,255,0.5)"
               }}>
-                <Zap size={22} color="#080C10" fill="#080C10" />
+                <Zap size={24} color="#080C10" fill="#080C10" />
               </div>
               <span style={{
                 fontFamily: "'Space Grotesk', sans-serif",
-                fontSize: 20, fontWeight: 700, color: "var(--text-primary)",
-              }}>EnergyIQ</span>
+                fontSize: 24, fontWeight: 700, color: "var(--text-primary)", letterSpacing: 1
+              }}>Energy<span className="gradient-text font-normal" style={{fontWeight: 400}}>IQ</span></span>
             </div>
             <h2 style={{
               fontFamily: "'Space Grotesk', sans-serif",
-              fontSize: 36, fontWeight: 700,
-              color: "var(--text-primary)", lineHeight: 1.25, marginBottom: 16,
+              fontSize: 54, fontWeight: 800,
+              color: "var(--text-primary)", lineHeight: 1.1,
+              marginBottom: 20, letterSpacing: -1.5
             }}>
-              Join thousands of<br />
-              <span className="gradient-text">energy-conscious</span> campuses
+              Join the <br />
+              <span className="gradient-text glow-text" style={{ background: "linear-gradient(135deg, #58A6FF, #A78BFA)", backgroundClip: "text", WebkitBackgroundClip: "text" }}>energy revolution</span>
             </h2>
-            <p style={{ fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.7 }}>
-              Get started for free. Set up in minutes. No credit card required.
+            <p style={{ fontSize: 17, color: "var(--text-secondary)", lineHeight: 1.6, maxWidth: "95%" }}>
+              Get comprehensive visibility into campus consumption. Automate anomaly resolution and cut utility costs.
             </p>
           </div>
-
-          {/* Checklist */}
-          <div className="animate-fadeInUp delay-200" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {[
-              "Real-time energy readings via WebSocket",
-              "AI-powered anomaly detection",
-              "14-day historical analytics",
-              "Smart intervention recommendations",
-            ].map((item, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <CheckCircle size={18} color="#39D98A" style={{ flexShrink: 0 }} />
-                <span style={{ fontSize: 14, color: "var(--text-secondary)" }}>{item}</span>
+          
+          <div style={{
+            background: "rgba(13,17,23,0.5)", border: "1px solid rgba(88,166,255,0.2)",
+            borderRadius: 16, padding: "24px", backdropFilter: "blur(20px)",
+            animation: "fadeInUp 0.6s ease both", animationDelay: "300ms",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.3), inset 0 0 20px rgba(88,166,255,0.05)"
+          }}>
+            <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
+              <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#58A6FF20", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <CheckCircle size={20} color="#58A6FF" />
               </div>
-            ))}
+              <div>
+                <h4 style={{ color: "#E6EDF3", fontSize: 15, fontWeight: 600, marginBottom: 4 }}>Trusted by 50+ campuses</h4>
+                <p style={{ color: "var(--text-muted)", fontSize: 13, lineHeight: 1.5 }}>Join leading universities using EnergyIQ to manage millions of square feet in real-time.</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Right panel — form */}
       <div className="auth-right">
-        <div className="auth-card animate-slideRight">
-          <div style={{ marginBottom: 28, textAlign: "center" }}>
+        <div className="auth-card" style={{
+          background: "var(--bg-glass)",
+          backdropFilter: "blur(30px)",
+          WebkitBackdropFilter: "blur(30px)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.02)",
+          borderRadius: 24,
+          padding: "40px",
+          width: "100%", maxWidth: 440,
+          animation: "scaleIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both"
+        }}>
+          <div style={{ marginBottom: 36, textAlign: "center" }}>
             <h1 style={{
               fontFamily: "'Space Grotesk', sans-serif",
-              fontSize: 26, fontWeight: 700,
-              color: "var(--text-primary)", marginBottom: 8,
-            }}>Create account</h1>
-            <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
-              Start monitoring your campus today
-            </p>
+              fontSize: 28, fontWeight: 700, color: "var(--text-primary)", marginBottom: 8
+            }}>Request Access</h1>
+            <p style={{ color: "var(--text-muted)", fontSize: 15 }}>Create your facility manager account</p>
           </div>
 
-          <div style={{ display: "flex", gap: 10, marginBottom: 4 }}>
-            <SocialBtn icon={Github} label="GitHub" color="#7D8590" />
-            <SocialBtn icon={Chrome} label="Google" color="#4285F4" />
-          </div>
-          <div className="auth-divider">or register with email</div>
-
-          <form onSubmit={handleSubmit} noValidate>
-            {/* Name */}
-            <div className="auth-input-wrap">
-              <User size={16} className="auth-input-icon" />
-              <input
-                type="text"
-                className="auth-input"
-                placeholder="Your full name"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                autoComplete="name"
-              />
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <InputField icon={User} type="text" placeholder="Full Name" value={name} onChange={e => setName(e.target.value)} delay={100} />
+            <InputField icon={Mail} type="email" placeholder="name@university.edu" value={email} onChange={e => setEmail(e.target.value)} delay={200} />
+            <div style={{ animation: "fadeInUp 0.5s ease both", animationDelay: "300ms" }}>
+              <InputField icon={Lock} type="password" placeholder="Create a password" value={password} onChange={e => setPassword(e.target.value)} delay={0} isPassword />
+              <PasswordStrength password={password} />
             </div>
 
-            {/* Email */}
-            <div className="auth-input-wrap">
-              <Mail size={16} className="auth-input-icon" />
-              <input
-                type="email"
-                className="auth-input"
-                placeholder="you@campus.edu"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                autoComplete="email"
-              />
-            </div>
-
-            {/* Password */}
-            <div className="auth-input-wrap">
-              <Lock size={16} className="auth-input-icon" />
-              <input
-                type={showPass ? "text" : "password"}
-                className="auth-input"
-                placeholder="Create a password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                style={{ paddingRight: 44 }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPass(v => !v)}
-                style={{
-                  position: "absolute", right: 14, top: "50%",
-                  transform: "translateY(-50%)",
-                  background: "none", border: "none",
-                  color: "var(--text-muted)", cursor: "pointer", padding: 0, display: "flex",
-                }}
-              >
-                {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-            <PasswordStrength password={password} />
-
-            {/* Confirm */}
-            <div className="auth-input-wrap" style={{ marginTop: 8 }}>
-              <Lock size={16} className="auth-input-icon" />
-              <input
-                type={showConfirm ? "text" : "password"}
-                className="auth-input"
-                placeholder="Confirm password"
-                value={confirm}
-                onChange={e => setConfirm(e.target.value)}
-                style={{
-                  paddingRight: 44,
-                  borderColor: confirm && confirm !== password ? "#FF6B6B" : undefined,
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirm(v => !v)}
-                style={{
-                  position: "absolute", right: 14, top: "50%",
-                  transform: "translateY(-50%)",
-                  background: "none", border: "none",
-                  color: "var(--text-muted)", cursor: "pointer", padding: 0, display: "flex",
-                }}
-              >
-                {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-
-            {/* Terms */}
-            <label style={{
-              display: "flex", alignItems: "flex-start", gap: 10,
-              marginTop: 16, marginBottom: 20, cursor: "pointer",
-            }}>
-              <input
-                type="checkbox"
-                checked={agreed}
-                onChange={e => setAgreed(e.target.checked)}
-                style={{ marginTop: 2, accentColor: "#39D98A", width: 14, height: 14 }}
-              />
-              <span style={{ fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.5 }}>
-                I agree to the{" "}
-                <button type="button" className="auth-link" style={{ fontSize: 12.5 }}>Terms of Service</button>
-                {" "}and{" "}
-                <button type="button" className="auth-link" style={{ fontSize: 12.5 }}>Privacy Policy</button>
-              </span>
-            </label>
-
-            {/* Error */}
             {error && (
               <div style={{
-                padding: "10px 14px", borderRadius: 10,
-                background: "rgba(255,107,107,0.08)",
-                border: "1px solid rgba(255,107,107,0.3)",
-                color: "#FF6B6B", fontSize: 13, marginBottom: 16,
-              }}>{error}</div>
+                color: "#FF6B6B", fontSize: 14, background: "rgba(255,107,107,0.15)",
+                padding: "12px", borderRadius: 12, border: "1px solid rgba(255,107,107,0.3)",
+                animation: "shake 0.4s ease", textAlign: "center", fontWeight: 500
+              }}>
+                {error}
+              </div>
             )}
 
-            {/* Submit */}
             <button
               type="submit"
-              className="btn-glow"
               disabled={loading}
               style={{
-                width: "100%", padding: "14px",
-                fontSize: 15, letterSpacing: 0.2,
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                opacity: loading ? 0.7 : 1,
+                width: "100%", padding: "16px", marginTop: 16,
+                background: "linear-gradient(135deg, #58A6FF, #A78BFA)",
+                backgroundSize: "200% auto",
+                border: "none", borderRadius: 14,
+                color: "#080C10", fontSize: 16, fontWeight: 700,
+                cursor: loading ? "not-allowed" : "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+                boxShadow: "0 8px 20px rgba(88,166,255,0.4), inset 0 0 10px rgba(255,255,255,0.4)",
+                animation: "fadeInUp 0.5s ease both, gradient-x 3s linear infinite",
+                animationDelay: "500ms",
               }}
+              onMouseEnter={e => { if(!loading) { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 12px 25px rgba(88,166,255,0.6), inset 0 0 15px rgba(255,255,255,0.5)"; } }}
+              onMouseLeave={e => { if(!loading) { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(88,166,255,0.4), inset 0 0 10px rgba(255,255,255,0.4)"; } }}
             >
               {loading ? (
-                <>
-                  <div style={{
-                    width: 16, height: 16, borderRadius: "50%",
-                    border: "2px solid rgba(8,12,16,0.3)",
-                    borderTopColor: "#080C10",
-                    animation: "spin-slow 0.6s linear infinite",
-                  }} />
-                  Creating account…
-                </>
+                <div style={{ width: 22, height: 22, border: "3px solid rgba(8,12,16,0.2)", borderTopColor: "#080C10", borderRadius: "50%", animation: "spin-slow 0.8s linear infinite" }} />
               ) : (
-                <>Create account <ArrowRight size={16} /></>
+                <>Create Account <ArrowRight size={18} /></>
               )}
             </button>
           </form>
 
-          <p style={{ textAlign: "center", marginTop: 20, fontSize: 13.5, color: "var(--text-secondary)" }}>
+          <p style={{
+            textAlign: "center", marginTop: 32, fontSize: 14, color: "var(--text-muted)",
+            animation: "fadeInUp 0.5s ease both", animationDelay: "600ms"
+          }}>
             Already have an account?{" "}
-            <button className="auth-link" onClick={onGoSignIn}>Sign in</button>
+            <button onClick={onGoSignIn} style={{
+              background: "none", border: "none", color: "#58A6FF", fontSize: 14,
+              fontWeight: 600, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 4
+            }}>
+              Sign in
+            </button>
           </p>
         </div>
       </div>

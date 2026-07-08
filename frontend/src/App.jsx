@@ -42,6 +42,29 @@ function useWindowSize() {
   return width;
 }
 
+/* ── useCountUp hook ──────────────────────────────────────── */
+function useCountUp(endValue, duration = 1000) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    const val = parseFloat(endValue);
+    if (isNaN(val)) {
+      setCount(endValue);
+      return;
+    }
+    let startTimestamp = null;
+    let animFrame = null;
+    const step = (timestamp) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      setCount(Math.floor(progress * val));
+      if (progress < 1) animFrame = window.requestAnimationFrame(step);
+    };
+    animFrame = window.requestAnimationFrame(step);
+    return () => window.cancelAnimationFrame(animFrame);
+  }, [endValue, duration]);
+  return count;
+}
+
 /* ── Greeting helper ──────────────────────────────────────── */
 function getGreeting() {
   const h = new Date().getHours();
@@ -52,6 +75,10 @@ function getGreeting() {
 
 /* ── KPI Card ─────────────────────────────────────────────── */
 function Kpi({ icon: Icon, label, value, sub, accent, delay = 0 }) {
+  const numericValue = typeof value === "string" ? parseFloat(value.replace(/[^0-9.]/g, '')) : value;
+  const count = useCountUp(numericValue, 1500);
+  const displayValue = typeof value === "string" ? value.replace(/[0-9.]+/, count) : count;
+
   return (
     <div className="kpi-card" style={{ animationDelay: `${delay}ms` }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
@@ -357,7 +384,14 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
       />
 
       {/* ── Sticky Header ─────────────────────────────────── */}
-      <header className="main-header">
+      <header className="main-header" style={{
+        background: "var(--bg-glass)",
+        backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
+        borderBottom: "1px solid rgba(88,166,255,0.15)",
+        boxShadow: "0 10px 30px -10px rgba(0,0,0,0.5), inset 0 -10px 20px -10px rgba(88,166,255,0.05)",
+        position: "sticky", top: 0, zIndex: 100,
+      }}>
         <div className="header-left">
           {/* Hamburger — mobile only */}
           {isMobile && (
@@ -368,19 +402,20 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
 
           {/* Logo */}
           <div style={{
-            width: 36, height: 36, borderRadius: 9,
+            width: 38, height: 38, borderRadius: 12,
             background: "linear-gradient(135deg, #39D98A, #22D3EE)",
             display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            boxShadow: "0 0 15px rgba(34,211,238,0.4)"
           }}>
-            <Zap size={17} color="#080C10" fill="#080C10" />
+            <Zap size={20} color="#080C10" fill="#080C10" />
           </div>
 
           {/* Brand text */}
           <div className={isMobile ? "" : ""}>
             <div style={{
               fontFamily: "'Space Grotesk', sans-serif",
-              fontSize: 15, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1,
-            }}>EnergyIQ</div>
+              fontSize: 16, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1, letterSpacing: 0.5
+            }}>Energy<span className="gradient-text font-normal" style={{fontWeight: 400}}>IQ</span></div>
             {!isMobile && (
               <div className="header-logo-text" style={{ fontSize: 10.5, color: "var(--text-muted)" }}>
                 Campus Monitor · {zones.length} zones
@@ -442,6 +477,10 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
           <button
             className="notif-btn"
             aria-label="Notifications"
+            onClick={() => setActiveNav("alerts")}
+            style={{
+              animation: (summary?.anomaly_count ?? 0) > 0 ? "shake 5s ease infinite" : "none"
+            }}
           >
             <Bell size={15} color="var(--text-secondary)" />
             {(summary?.anomaly_count ?? 0) > 0 && (
@@ -508,32 +547,27 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
         )}
 
         {/* ── Dashboard tab content ──────────────────── */}
-        {activeNav === "dashboard" && (<>
+        {activeNav === "dashboard" && (<div style={{ animation: "fadeInUp 0.4s ease both" }}>
         {/* Welcome strip */}
-        <div className="welcome-strip">
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ animation: "float 3s ease-in-out infinite" }}>
-              <Sparkles size={16} color="#39D98A" />
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <span style={{
-                fontFamily: "'Space Grotesk', sans-serif",
-                fontWeight: 600, fontSize: isMobile ? 13.5 : 15,
-              }}>
-                {getGreeting()}, {user?.name?.split(" ")[0] ?? "Admin"} 👋
-              </span>
-              {!isMobile && (
-                <span style={{ marginLeft: 12, fontSize: 12.5, color: "var(--text-secondary)" }}>
-                  Your campus is running{" "}
-                  <span style={{ color: "#39D98A", fontWeight: 500 }}>efficiently today</span>.
-                </span>
-              )}
-            </div>
+        <div className="welcome-strip" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+          <div style={{ minWidth: 0 }}>
+            <h1 style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontWeight: 800, fontSize: isMobile ? 18 : 24,
+              color: "var(--text-primary)", letterSpacing: -0.5,
+              margin: 0, lineHeight: 1.2,
+            }}>
+              {getGreeting()}, <span className="gradient-text">{user?.name?.split(" ")[0] ?? "Admin"}</span>
+            </h1>
+            <p style={{ margin: "4px 0 0 0", fontSize: 13, color: "var(--text-secondary)" }}>
+              Your campus energy grid is currently operating <span style={{ color: "#39D98A", fontWeight: 600 }}>efficiently</span>.
+            </p>
           </div>
-          <div style={{ fontSize: 11.5, color: "var(--text-muted)", flexShrink: 0 }}>
+          <div style={{ fontSize: 12, color: "var(--text-muted)", flexShrink: 0, fontWeight: 500, background: "var(--bg-card)", padding: "6px 12px", borderRadius: 8, border: "1px solid var(--border)" }}>
             {new Date().toLocaleDateString("en-US", {
               weekday: isMobile ? "short" : "long",
               month: "short", day: "numeric",
+              year: "numeric"
             })}
           </div>
         </div>
@@ -585,32 +619,34 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
 
             {/* Chart */}
             {chartData.length === 0 ? (
-              <div className="skeleton" style={{ width: "100%", height: chartHeight }} />
+              <div className="skeleton" style={{ width: "100%", flex: 1, minHeight: 280 }} />
             ) : (
-              <ResponsiveContainer width="100%" height={chartHeight}>
-                <ComposedChart data={chartData} margin={{ top: 5, right: 8, left: isMobile ? -20 : -12, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor={zone?.color || "#39D98A"} stopOpacity={0.25} />
-                      <stop offset="95%" stopColor={zone?.color || "#39D98A"} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid stroke={gridColor} vertical={false} strokeDasharray="3 3" />
-                  <XAxis dataKey="label"
-                    tick={{ fill: axisColor, fontSize: isMobile ? 9 : 10 }} tickLine={false}
-                    axisLine={{ stroke: axisLineColor }}
-                    interval={Math.max(Math.floor(chartData.length / (isMobile ? 4 : 6)), 0)} />
-                  <YAxis
-                    tick={{ fill: axisColor, fontSize: isMobile ? 9 : 11 }} tickLine={false}
-                    axisLine={{ stroke: axisLineColor }} unit=" kW"
-                    width={isMobile ? 44 : 55} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Area type="monotone" dataKey="kw" fill="url(#areaGrad)" stroke="none" />
-                  <Line type="monotone" dataKey="kw"
-                    stroke={zone?.color || "#39D98A"} strokeWidth={2.5}
-                    dot={false} name="Actual usage (kW)" isAnimationActive />
-                </ComposedChart>
-              </ResponsiveContainer>
+              <div style={{ flex: 1, minHeight: 280, width: "100%" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={chartData} margin={{ top: 5, right: 8, left: isMobile ? -20 : -12, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%"  stopColor={zone?.color || "#39D98A"} stopOpacity={0.25} />
+                        <stop offset="95%" stopColor={zone?.color || "#39D98A"} stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid stroke={gridColor} vertical={false} strokeDasharray="3 3" />
+                    <XAxis dataKey="label"
+                      tick={{ fill: axisColor, fontSize: isMobile ? 9 : 10 }} tickLine={false}
+                      axisLine={{ stroke: axisLineColor }}
+                      interval={Math.max(Math.floor(chartData.length / (isMobile ? 4 : 6)), 0)} />
+                    <YAxis
+                      tick={{ fill: axisColor, fontSize: isMobile ? 9 : 11 }} tickLine={false}
+                      axisLine={{ stroke: axisLineColor }} unit=" kW"
+                      width={isMobile ? 44 : 55} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Area type="monotone" dataKey="kw" fill="url(#areaGrad)" stroke="none" />
+                    <Line type="monotone" dataKey="kw"
+                      stroke={zone?.color || "#39D98A"} strokeWidth={2.5}
+                      dot={false} name="Actual usage (kW)" isAnimationActive />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
             )}
           </Panel>
 
@@ -681,20 +717,38 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
           </div>
         </div>
 
-        </>)}
+        </div>)}
+      </div>
 
-        {/* ── Footer ────────────────────────────────────── */}
-        <div className="dash-footer">
-          <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--text-muted)", fontSize: 12 }}>
-            <Leaf size={12} color="#39D98A" />
-            <span>EnergyIQ Campus Monitor © 2025</span>
-          </div>
-          {!isMobile && (
-            <div style={{ fontSize: 11.5, color: "var(--text-muted)" }}>
-              FastAPI · React · WebSockets
+      {/* ── Footer ────────────────────────────────────── */}
+      <div className="dash-footer" style={{
+        padding: "24px 4%",
+        background: "var(--bg-glass)",
+        borderTop: "1px solid var(--border)",
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 16,
+        boxShadow: "var(--shadow-card)",
+        width: "100%",
+      }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--text-muted)", fontSize: 13, fontWeight: 500 }}>
+            <div style={{ 
+              width: 24, height: 24, borderRadius: "50%", background: "var(--glow-green)", 
+              display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--accent-green)"
+            }}>
+              <Leaf size={12} color="var(--accent-green)" />
             </div>
-          )}
-        </div>
+            <span className="gradient-text">EnergyIQ Energy Monitor © 2026</span>
+          </div>
+          <div style={{ 
+            fontSize: 11.5, color: "var(--text-secondary)", display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" 
+          }}>
+            <span style={{ background: "var(--bg-rec)", padding: "4px 10px", borderRadius: 99, border: "1px solid var(--border)" }}>FastAPI</span>
+            <span style={{ background: "var(--bg-rec)", padding: "4px 10px", borderRadius: 99, border: "1px solid var(--border)" }}>React</span>
+            <span style={{ background: "var(--bg-rec)", padding: "4px 10px", borderRadius: 99, border: "1px solid var(--border)" }}>WebSockets</span>
+          </div>
       </div>
     </div>
   );

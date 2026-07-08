@@ -95,6 +95,15 @@ body {
   --shadow-glow:      0 0 40px rgba(29,164,99,0.05);
 }
 
+/* ─── Dashboard Chart Glows ─────────────────────────────────── */
+.recharts-line-curve {
+  filter: drop-shadow(0px 0px 8px rgba(88, 166, 255, 0.4));
+  transition: all 0.3s ease;
+}
+.recharts-area-area {
+  transition: all 0.3s ease;
+}
+
 /* ─── Smooth theme transitions ──────────────────────────────── */
 *, *::before, *::after {
   transition:
@@ -163,6 +172,12 @@ body {
   0%, 100% { background-position: 0% 50%; }
   50%       { background-position: 100% 50%; }
 }
+@keyframes shake {
+  0%, 100% { transform: rotate(0deg); }
+  2%, 6%, 10% { transform: rotate(-10deg); }
+  4%, 8% { transform: rotate(10deg); }
+  12% { transform: rotate(0deg); }
+}
 
 /* ─── Utility ───────────────────────────────────────────────── */
 .animate-fadeInUp  { animation: fadeInUp 0.5s ease both; }
@@ -186,6 +201,11 @@ body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   animation: gradient-x 4s ease infinite;
+}
+
+/* ─── Glow text ─────────────────────────────────────────────── */
+.glow-text {
+  text-shadow: 0 0 10px rgba(57, 217, 138, 0.5);
 }
 
 /* ─── Glass card ────────────────────────────────────────────── */
@@ -611,15 +631,27 @@ body {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 16px 18px;
-  cursor: default;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   animation: fadeInUp 0.5s ease both;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
 }
 .kpi-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-card), 0 0 20px var(--glow-green);
-  border-color: rgba(57,217,138,0.3);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+.kpi-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.kpi-sub {
+  font-size: 11.5px;
+  color: var(--text-muted);
 }
 
 /* ── Main grid ──────────────────────────────────────────────── */
@@ -637,6 +669,9 @@ body {
   padding: 18px 20px;
   animation: scaleIn 0.4s ease both;
   transition: box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 .panel:hover { box-shadow: var(--shadow-card); }
 

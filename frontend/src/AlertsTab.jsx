@@ -91,45 +91,60 @@ function StatPill({ count, label, color, bg }) {
 /* ── alert card ─────────────────────────────────────────────── */
 function AlertCard({ alert, status, onStatusChange, index }) {
   const [expanded, setExpanded] = useState(false);
+  const [simulating, setSimulating] = useState(false);
+  const [simulated, setSimulated] = useState(false);
   const sev = SEV[alert.severity] || SEV.mild;
+
+  const handleSimulate = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setSimulating(true);
+    setTimeout(() => {
+      setSimulating(false);
+      setSimulated(true);
+    }, 1500);
+  };
 
   return (
     <div style={{
       background:"var(--bg-card)", border:`1px solid var(--border)`,
-      borderLeft:`3px solid ${sev.color}`,
-      borderRadius:12, overflow:"hidden",
-      animation:`fadeInUp 0.4s ease both`,
-      animationDelay:`${index * 40}ms`,
-      transition:"box-shadow 0.2s ease, border-color 0.2s ease",
+      borderTop:`3px solid ${sev.color}`, /* Changed to top border for grid cards */
+      borderRadius:16, overflow:"hidden",
+      animation:`fadeInUp 0.5s ease both`,
+      animationDelay:`${index * 50}ms`,
+      transition:"transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease",
+      display: "flex", flexDirection: "column",
+      height: expanded ? "auto" : "100%",
     }}
-    onMouseEnter={e => e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.25)"}
-    onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}
+    className="alert-glass-card"
+    onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = `0 10px 30px ${sev.bg}`; }}
+    onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
     >
       {/* Main row */}
       <div style={{
-        display:"flex", alignItems:"flex-start", gap:12, padding:"14px 16px",
-        cursor:"pointer",
+        display:"flex", alignItems:"flex-start", gap:12, padding:"16px",
+        cursor:"pointer", flex: 1,
       }} onClick={() => setExpanded(v => !v)}>
         {/* Severity dot */}
         <div style={{
-          width:36, height:36, borderRadius:10,
+          width:40, height:40, borderRadius:12,
           background:sev.bg, border:`1px solid ${sev.border}`,
           display:"flex", alignItems:"center", justifyContent:"center",
-          flexShrink:0, marginTop:1,
-          fontSize:16,
+          flexShrink:0,
+          fontSize:18,
+          boxShadow: `inset 0 0 10px ${sev.bg}`
         }}>{sev.icon}</div>
 
         {/* Content */}
         <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:4 }}>
-            <span style={{ fontSize:13.5, fontWeight:600, color:"var(--text-primary)" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:6 }}>
+            <span style={{ fontSize:14, fontWeight:600, color:"var(--text-primary)", lineHeight: 1.2 }}>
               {alert.label}
             </span>
-            <SevBadge severity={alert.severity} />
           </div>
 
-          <div style={{ display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
-            {/* Zone pill */}
+          <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:12 }}>
+            <SevBadge severity={alert.severity} />
             <span style={{
               display:"inline-flex", alignItems:"center", gap:4,
               fontSize:11, color:alert.color, fontWeight:500,
@@ -139,27 +154,28 @@ function AlertCard({ alert, status, onStatusChange, index }) {
               <span style={{ width:6, height:6, borderRadius:"50%", background:alert.color }} />
               {alert.zone_name}
             </span>
-            {/* Timestamp */}
-            <span style={{ fontSize:11, color:"var(--text-muted)" }}>
-              {fmtTs(alert.ts)} · {timeAgo(alert.ts)}
-            </span>
+          </div>
+          
+          {/* Timestamp inline */}
+          <div style={{ fontSize:11, color:"var(--text-muted)", display: "flex", alignItems: "center", gap: 4 }}>
+             <Clock size={12} /> {fmtTs(alert.ts)} · {timeAgo(alert.ts)}
           </div>
         </div>
-
-        {/* Right: metrics + status */}
-        <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:6, flexShrink:0 }}>
-          <div style={{ textAlign:"right" }}>
-            <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:13, fontWeight:600, color:sev.color }}>
-              {alert.kw} kW
-            </div>
-            <div style={{ fontSize:10.5, color:"var(--text-muted)" }}>
-              exp. {alert.expected_kw} kW
-            </div>
-          </div>
-          <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:11.5,
-            color:sev.color, background:sev.bg, borderRadius:6, padding:"2px 7px" }}>
-            +{alert.pct_over}%
-          </div>
+      </div>
+      
+      {/* Metrics Strip always visible at bottom of unexpanded card */}
+      <div style={{ 
+        display:"flex", alignItems:"center", justifyContent: "space-between", 
+        padding:"10px 16px", background: "rgba(0,0,0,0.1)", borderTop: "1px solid var(--border)",
+        marginTop: "auto"
+      }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+          <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:16, fontWeight:700, color:sev.color }}>{alert.kw} kW</span>
+          <span style={{ fontSize:10.5, color:"var(--text-muted)" }}>actual</span>
+        </div>
+        <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:11.5,
+          color:sev.color, background:sev.bg, borderRadius:6, padding:"3px 8px", fontWeight: 600 }}>
+          +{alert.pct_over}% OVER
         </div>
       </div>
 
@@ -190,20 +206,43 @@ function AlertCard({ alert, status, onStatusChange, index }) {
             </div>
 
             {/* Status toggle */}
-            <StatusBtn status={status} onClick={(e) => { e.stopPropagation(); onStatusChange(); }} />
+            <div onClick={(e) => e.stopPropagation()}>
+              <StatusBtn status={status} onClick={(e) => { e.stopPropagation(); e.preventDefault(); onStatusChange(); }} />
+            </div>
           </div>
 
-          {/* Linked recommendation */}
+          {/* Expanded Linked recommendation */}
           {alert.rec_link && (
             <div style={{
-              marginTop:12, padding:"9px 12px",
-              background:"rgba(88,166,255,0.06)", border:"1px solid rgba(88,166,255,0.2)",
-              borderRadius:9, display:"flex", alignItems:"center", gap:8,
+              marginTop:12, padding:"12px",
+              background:"rgba(88,166,255,0.08)", border:"1px solid rgba(88,166,255,0.2)",
+              borderRadius:10, display:"flex", alignItems:"flex-start", gap:10,
+              boxShadow: "inset 0 0 15px rgba(88,166,255,0.05)"
             }}>
-              <Link size={12} color="#58A6FF" style={{ flexShrink:0 }} />
+              <Link size={14} color="#58A6FF" style={{ flexShrink:0, marginTop: 2 }} />
               <div>
-                <span style={{ fontSize:10.5, color:"var(--text-muted)" }}>Linked intervention → </span>
-                <span style={{ fontSize:12, color:"#58A6FF", fontWeight:500 }}>{alert.rec_link}</span>
+                <span style={{ fontSize:11, color:"var(--text-muted)", display:"block", marginBottom: 4 }}>RECOMMENDED INTERVENTION</span>
+                <span style={{ fontSize:13, color:"#58A6FF", fontWeight:600, lineHeight: 1.4 }}>{alert.rec_link}</span>
+                <button 
+                  onClick={handleSimulate}
+                  disabled={simulating || simulated}
+                  style={{
+                    marginTop: 10, padding: "6px 12px", borderRadius: 6, fontSize: 11, fontWeight: 600,
+                    background: simulated ? "rgba(57,217,138,0.2)" : "#58A6FF", 
+                    color: simulated ? "#39D98A" : "#000", 
+                    border: simulated ? "1px solid rgba(57,217,138,0.5)" : "none", 
+                    cursor: (simulating || simulated) ? "default" : "pointer", 
+                    display: "flex", alignItems: "center", gap: 6,
+                    transition: "all 0.3s ease"
+                }}>
+                  {simulating ? (
+                    <><RefreshCw size={12} className="spin-slow" /> Simulating...</>
+                  ) : simulated ? (
+                    <><CheckCircle size={12} /> Optimization applied</>
+                  ) : (
+                    <>Simulate <ChevronRight size={12} /></>
+                  )}
+                </button>
               </div>
             </div>
           )}
@@ -224,6 +263,7 @@ export default function AlertsTab({ isMobile }) {
   const [loading, setLoading]     = useState(true);
   const [filterZone, setFilterZone] = useState("all");
   const [filterSev,  setFilterSev]  = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
   const [statusMap, setStatusMap]   = useState({});   // alert index → status string
 
   /* load zones */
@@ -305,6 +345,29 @@ export default function AlertsTab({ isMobile }) {
           ))}
         </div>
 
+        {/* Status filter */}
+        <div style={{
+          display:"flex", gap:3, background:"var(--bg-card)",
+          border:"1px solid var(--border)", borderRadius:10, padding:3,
+        }}>
+          {["all", "new", "acknowledged", "resolved"].map(s => {
+            const st = STATUS_CONFIG[s];
+            return (
+              <button key={s} onClick={() => setFilterStatus(s)} style={{
+                padding:"5px 12px", borderRadius:8, fontSize:12, fontWeight:500,
+                fontFamily:"'Inter',system-ui,sans-serif", cursor:"pointer", display:"flex", alignItems:"center", gap: 5,
+                border: filterStatus === s ? `1px solid ${s === "all" ? "rgba(57,217,138,0.35)" : (st?.color + "40" || "transparent")}` : "1px solid transparent",
+                background: filterStatus === s ? (s === "all" ? "rgba(57,217,138,0.10)" : st?.bg) : "transparent",
+                color: filterStatus === s ? (s === "all" ? "#39D98A" : st?.color) : "var(--text-secondary)",
+                transition:"all 0.2s ease", textTransform:"capitalize",
+              }}>
+                {s !== "all" && st && <st.icon size={12} />}
+                {s === "all" ? "All statuses" : s}
+              </button>
+            )
+          })}
+        </div>
+
         {/* Zone dropdown */}
         <div style={{ position:"relative" }}>
           <select value={filterZone} onChange={e => setFilterZone(e.target.value)} style={{
@@ -372,43 +435,54 @@ export default function AlertsTab({ isMobile }) {
           </p>
         </div>
       ) : (
-        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+        <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
           {/* Group by severity: severe first */}
           {["severe", "moderate", "mild"].map(sev => {
-            const group = alerts.filter(a => a.severity === sev);
+            const filteredAlerts = alerts
+              .map((a, i) => ({ ...a, _origIdx: i }))
+              .filter(a => filterStatus === "all" || getStatus(a._origIdx) === filterStatus);
+            
+            const group = filteredAlerts.filter(a => a.severity === sev);
             if (!group.length) return null;
             const cfg = SEV[sev];
             return (
-              <div key={sev}>
+              <div key={sev} style={{ animation:"fadeIn 0.5s ease" }}>
                 {/* Group header */}
                 <div style={{
                   display:"flex", alignItems:"center", gap:8,
-                  padding:"6px 0", marginBottom:6,
+                  padding:"6px 0", marginBottom:12,
                 }}>
-                  <span style={{ fontSize:12.5, fontWeight:600, color:cfg.color }}>
-                    {cfg.icon} {cfg.label}
+                  <span style={{ fontSize:14, fontWeight:700, color:cfg.color, textTransform: "uppercase", letterSpacing: 1 }}>
+                    {cfg.icon} {cfg.label} ALERTS
                   </span>
                   <span style={{
                     fontSize:11, color:cfg.color, background:cfg.bg,
                     border:`1px solid ${cfg.border}`, borderRadius:99,
-                    padding:"1px 8px", fontFamily:"'IBM Plex Mono',monospace",
+                    padding:"2px 10px", fontFamily:"'IBM Plex Mono',monospace", fontWeight: 700
                   }}>{group.length}</span>
-                  <div style={{ flex:1, height:1, background:`${cfg.color}20` }} />
+                  <div style={{ flex:1, height:1, background:`linear-gradient(90deg, ${cfg.color}40, transparent)` }} />
                 </div>
 
-                {group.map((alert, idx) => {
-                  const globalIdx = alerts.indexOf(alert);
-                  return (
-                    <div key={globalIdx} style={{ marginBottom:8 }}>
+                {/* GRID LAYOUT for cards */}
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+                  gap: 16,
+                  alignItems: "start"
+                }}>
+                  {group.map((alert) => {
+                    const globalIdx = alert._origIdx;
+                    return (
                       <AlertCard
+                        key={globalIdx}
                         alert={alert}
                         status={getStatus(globalIdx)}
                         onStatusChange={() => cycleStatus(globalIdx, getStatus(globalIdx))}
-                        index={idx}
+                        index={globalIdx}
                       />
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             );
           })}
