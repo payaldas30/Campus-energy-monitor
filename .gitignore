@@ -9,6 +9,7 @@ venv/
 node_modules/
 dist/
 .env
+.env.example
 
 # Editor / OS
 .DS_Store
