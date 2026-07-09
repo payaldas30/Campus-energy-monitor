@@ -6,6 +6,7 @@ import {
 import {
   Activity, AlertTriangle, TrendingUp, Zap, Leaf, ChevronRight,
   WifiOff, Sun, Moon, LogOut, Bell, BarChart2, Sparkles, Menu, X,
+  Info,
 } from "lucide-react";
 import {
   fetchZones, fetchHistory, fetchSummary, fetchAnomalies,
@@ -14,6 +15,8 @@ import {
 import { SignIn, SignUp } from "./AuthPages";
 import AnalyticsTab from "./AnalyticsTab";
 import AlertsTab from "./AlertsTab";
+import AboutTab from "./AboutTab";
+import LandingPage from "./LandingPage";
 
 /* ── helpers ──────────────────────────────────────────────── */
 const fmtTime = (iso) => {
@@ -47,10 +50,7 @@ function useCountUp(endValue, duration = 1000) {
   const [count, setCount] = useState(0);
   useEffect(() => {
     const val = parseFloat(endValue);
-    if (isNaN(val)) {
-      setCount(endValue);
-      return;
-    }
+    if (isNaN(val)) { setCount(endValue); return; }
     let startTimestamp = null;
     let animFrame = null;
     const step = (timestamp) => {
@@ -65,6 +65,24 @@ function useCountUp(endValue, duration = 1000) {
   return count;
 }
 
+/* ── Scroll Progress Bar ──────────────────────────────────── */
+function ScrollProgressBar() {
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    const fn = () => {
+      const el = document.documentElement;
+      const scrollTop = el.scrollTop || document.body.scrollTop;
+      const scrollHeight = el.scrollHeight - el.clientHeight;
+      setProgress(scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0);
+    };
+    window.addEventListener("scroll", fn, { passive: true });
+    return () => window.removeEventListener("scroll", fn);
+  }, []);
+  return (
+    <div className="scroll-progress" style={{ width: `${progress}%` }} />
+  );
+}
+
 /* ── Greeting helper ──────────────────────────────────────── */
 function getGreeting() {
   const h = new Date().getHours();
@@ -75,7 +93,7 @@ function getGreeting() {
 
 /* ── KPI Card ─────────────────────────────────────────────── */
 function Kpi({ icon: Icon, label, value, sub, accent, delay = 0 }) {
-  const numericValue = typeof value === "string" ? parseFloat(value.replace(/[^0-9.]/g, '')) : value;
+  const numericValue = typeof value === "string" ? parseFloat(value.replace(/[^0-9.]/g, "")) : value;
   const count = useCountUp(numericValue, 1500);
   const displayValue = typeof value === "string" ? value.replace(/[0-9.]+/, count) : count;
 
@@ -151,20 +169,23 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   MOBILE DRAWER
+   NAV ITEMS
 ══════════════════════════════════════════════════════════════ */
 const NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: BarChart2 },
   { id: "analytics", label: "Analytics", icon: TrendingUp },
   { id: "alerts",    label: "Alerts",    icon: AlertTriangle },
+  { id: "about",     label: "About",     icon: Info },
 ];
 
+/* ══════════════════════════════════════════════════════════════
+   MOBILE DRAWER
+══════════════════════════════════════════════════════════════ */
 function MobileDrawer({ open, onClose, activeNav, setActiveNav, user, theme, toggleTheme, onLogout }) {
   const initials = user?.name
     ? user.name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)
     : "U";
 
-  // Close on ESC
   useEffect(() => {
     const fn = (e) => { if (e.key === "Escape") onClose(); };
     if (open) window.addEventListener("keydown", fn);
@@ -174,12 +195,8 @@ function MobileDrawer({ open, onClose, activeNav, setActiveNav, user, theme, tog
   if (!open) return null;
   return (
     <>
-      {/* Backdrop */}
       <div className="mobile-menu-backdrop open" onClick={onClose} />
-
-      {/* Drawer */}
       <nav className="mobile-drawer">
-        {/* Header */}
         <div className="mobile-drawer-header">
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{
@@ -202,7 +219,6 @@ function MobileDrawer({ open, onClose, activeNav, setActiveNav, user, theme, tog
           </button>
         </div>
 
-        {/* Nav items */}
         {NAV_ITEMS.map(({ id, label, icon: NavIcon }) => (
           <button
             key={id}
@@ -214,15 +230,12 @@ function MobileDrawer({ open, onClose, activeNav, setActiveNav, user, theme, tog
           </button>
         ))}
 
-        {/* Spacer */}
         <div style={{ flex: 1 }} />
 
-        {/* Bottom actions */}
         <div style={{
           borderTop: "1px solid var(--border)", paddingTop: 16, marginTop: 12,
           display: "flex", flexDirection: "column", gap: 10,
         }}>
-          {/* User info */}
           <div style={{
             display: "flex", alignItems: "center", gap: 10,
             padding: "10px 14px",
@@ -237,8 +250,6 @@ function MobileDrawer({ open, onClose, activeNav, setActiveNav, user, theme, tog
               <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{user?.email ?? ""}</div>
             </div>
           </div>
-
-          {/* Theme + logout row */}
           <div style={{ display: "flex", gap: 8 }}>
             <button className="theme-btn" onClick={toggleTheme} style={{ flex: 1, width: "auto", height: 40, borderRadius: 10 }} aria-label="Toggle theme">
               {theme === "dark" ? <Sun size={15} color="#F0B429" /> : <Moon size={15} color="#58A6FF" />}
@@ -259,8 +270,8 @@ function MobileDrawer({ open, onClose, activeNav, setActiveNav, user, theme, tog
 ══════════════════════════════════════════════════════════════ */
 function Dashboard({ user, theme, toggleTheme, onLogout }) {
   const width = useWindowSize();
-  const isMobile  = width <= 768;
-  const isTablet  = width <= 1024;
+  const isMobile = width <= 768;
+  const isTablet = width <= 1024;
 
   const [zones, setZones]       = useState([]);
   const [zoneId, setZoneId]     = useState(null);
@@ -371,6 +382,8 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
       fontFamily: "'Inter', system-ui, sans-serif",
       background: "var(--bg-page)", color: "var(--text-primary)", minHeight: "100vh",
     }}>
+      <ScrollProgressBar />
+
       {/* ── Mobile Drawer ─────────────────────────────────── */}
       <MobileDrawer
         open={drawerOpen}
@@ -393,14 +406,12 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
         position: "sticky", top: 0, zIndex: 100,
       }}>
         <div className="header-left">
-          {/* Hamburger — mobile only */}
           {isMobile && (
             <button className="hamburger" onClick={() => setDrawerOpen(true)} aria-label="Open menu">
               <span /><span /><span />
             </button>
           )}
 
-          {/* Logo */}
           <div style={{
             width: 38, height: 38, borderRadius: 12,
             background: "linear-gradient(135deg, #39D98A, #22D3EE)",
@@ -410,7 +421,6 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
             <Zap size={20} color="#080C10" fill="#080C10" />
           </div>
 
-          {/* Brand text */}
           <div className={isMobile ? "" : ""}>
             <div style={{
               fontFamily: "'Space Grotesk', sans-serif",
@@ -423,7 +433,6 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
             )}
           </div>
 
-          {/* Nav pills — tablet/desktop only */}
           {!isMobile && (
             <nav className="nav-pills" style={{ marginLeft: isMobile ? 0 : 16 }}>
               {NAV_ITEMS.map(({ id, label, icon: NavIcon }) => (
@@ -442,7 +451,6 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
                 >
                   <NavIcon size={13} />
                   {!isTablet && <span className="nav-label">{label}</span>}
-                  {/* anomaly badge on Alerts pill */}
                   {id === "alerts" && (summary?.anomaly_count ?? 0) > 0 && (
                     <span style={{
                       position:"absolute", top:-4, right:-4,
@@ -459,9 +467,7 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
           )}
         </div>
 
-        {/* Right side */}
         <div className="header-right">
-          {/* Live badge */}
           <div className={`conn-badge ${connected ? "live" : ""}`}>
             {connected
               ? <><div className="live-dot" /><span style={{ color: "#39D98A", fontWeight: 500 }}>Live</span></>
@@ -473,7 +479,6 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
             )}
           </div>
 
-          {/* Notification bell */}
           <button
             className="notif-btn"
             aria-label="Notifications"
@@ -493,17 +498,14 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
             )}
           </button>
 
-          {/* Theme toggle */}
           <button className="theme-btn" onClick={toggleTheme} aria-label="Toggle theme">
             {theme === "dark" ? <Sun size={15} color="#F0B429" /> : <Moon size={15} color="#58A6FF" />}
           </button>
 
-          {/* Avatar — desktop only */}
           {!isMobile && (
             <div className="user-avatar" title={user?.name}>{initials}</div>
           )}
 
-          {/* Logout — desktop only */}
           {!isMobile && (
             <button className="logout-btn" onClick={onLogout}>
               <LogOut size={13} />
@@ -516,7 +518,7 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
       {/* ── Page body ─────────────────────────────────────── */}
       <div className="page-container">
 
-        {/* ── Tab content switch ─────────────────────── */}
+        {/* ── Analytics tab ──────────────────────────── */}
         {activeNav === "analytics" && (
           <>
             <div style={{ marginBottom:20 }}>
@@ -531,6 +533,8 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
             <AnalyticsTab isMobile={isMobile} />
           </>
         )}
+
+        {/* ── Alerts tab ─────────────────────────────── */}
         {activeNav === "alerts" && (
           <>
             <div style={{ marginBottom:20 }}>
@@ -543,6 +547,22 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
               </p>
             </div>
             <AlertsTab isMobile={isMobile} />
+          </>
+        )}
+
+        {/* ── About tab ──────────────────────────────── */}
+        {activeNav === "about" && (
+          <>
+            <div style={{ marginBottom:20 }}>
+              <h2 style={{
+                fontFamily:"'Space Grotesk',sans-serif", fontSize: isMobile ? 18 : 22,
+                fontWeight:700, color:"var(--text-primary)", margin:"0 0 4px",
+              }}>About</h2>
+              <p style={{ fontSize:13, color:"var(--text-muted)" }}>
+                Platform overview, technology stack and quick start guide.
+              </p>
+            </div>
+            <AboutTab isMobile={isMobile} />
           </>
         )}
 
@@ -593,7 +613,6 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
 
           {/* Zone usage chart */}
           <Panel title="Zone usage — live" icon={BarChart2} accent="#39D98A" delay={0}>
-            {/* Zone selector */}
             <div style={{
               display: "flex", gap: 7, marginBottom: 14,
               flexWrap: "wrap", overflowX: isMobile ? "auto" : "visible",
@@ -617,7 +636,6 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
               ))}
             </div>
 
-            {/* Chart */}
             {chartData.length === 0 ? (
               <div className="skeleton" style={{ width: "100%", flex: 1, minHeight: 280 }} />
             ) : (
@@ -734,16 +752,16 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
         width: "100%",
       }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--text-muted)", fontSize: 13, fontWeight: 500 }}>
-            <div style={{ 
-              width: 24, height: 24, borderRadius: "50%", background: "var(--glow-green)", 
+            <div style={{
+              width: 24, height: 24, borderRadius: "50%", background: "var(--glow-green)",
               display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--accent-green)"
             }}>
               <Leaf size={12} color="var(--accent-green)" />
             </div>
             <span className="gradient-text">EnergyIQ Energy Monitor © 2026</span>
           </div>
-          <div style={{ 
-            fontSize: 11.5, color: "var(--text-secondary)", display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" 
+          <div style={{
+            fontSize: 11.5, color: "var(--text-secondary)", display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap"
           }}>
             <span style={{ background: "var(--bg-rec)", padding: "4px 10px", borderRadius: 99, border: "1px solid var(--border)" }}>FastAPI</span>
             <span style={{ background: "var(--bg-rec)", padding: "4px 10px", borderRadius: 99, border: "1px solid var(--border)" }}>React</span>
@@ -761,6 +779,7 @@ export default function App() {
   const [theme, setTheme]     = useState(getInitialTheme);
   const [user, setUser]       = useState(getInitialUser);
   const [authPage, setAuthPage] = useState("signin");
+  const [showLanding, setShowLanding] = useState(true);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -772,19 +791,38 @@ export default function App() {
   const toggleTheme  = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
   const handleSignIn = (u) => { localStorage.setItem("sem-user", JSON.stringify(u)); setUser(u); };
   const handleSignUp = (u) => { localStorage.setItem("sem-user", JSON.stringify(u)); setUser(u); };
-  const handleLogout = () => { localStorage.removeItem("sem-user"); setUser(null); setAuthPage("signin"); };
+  const handleLogout = () => {
+    localStorage.removeItem("sem-user");
+    setUser(null);
+    setAuthPage("signin");
+    setShowLanding(true);
+  };
 
-  if (!user) {
-    return authPage === "signup"
-      ? <SignUp onSignUp={handleSignUp} onGoSignIn={() => setAuthPage("signin")} />
-      : <SignIn onSignIn={handleSignIn} onGoSignUp={() => setAuthPage("signup")} />;
+  /* Already logged in — skip landing */
+  if (user) {
+    return (
+      <Dashboard
+        user={user}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        onLogout={handleLogout}
+      />
+    );
   }
-  return (
-    <Dashboard
-      user={user}
-      theme={theme}
-      toggleTheme={toggleTheme}
-      onLogout={handleLogout}
-    />
-  );
+
+  /* Landing page */
+  if (showLanding) {
+    return (
+      <LandingPage
+        theme={theme}
+        toggleTheme={toggleTheme}
+        onGetStarted={() => setShowLanding(false)}
+      />
+    );
+  }
+
+  /* Auth pages */
+  return authPage === "signup"
+    ? <SignUp onSignUp={handleSignUp} onGoSignIn={() => setAuthPage("signin")} theme={theme} toggleTheme={toggleTheme} />
+    : <SignIn onSignIn={handleSignIn} onGoSignUp={() => setAuthPage("signup")} theme={theme} toggleTheme={toggleTheme} />;
 }

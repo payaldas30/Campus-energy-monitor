@@ -6,7 +6,7 @@ import {
 } from "recharts";
 import {
   TrendingUp, BarChart2, Clock, Calendar, Zap,
-  RefreshCw, ChevronDown, Layers,
+  RefreshCw, ChevronDown, Layers, Sparkles, Grid,
 } from "lucide-react";
 import { fetchAnalytics, fetchZones } from "./api";
 
@@ -16,13 +16,6 @@ const PERIODS = [
   { id: "7d",  label: "Last 7 days" },
   { id: "14d", label: "Last 14 days" },
 ];
-
-const ZONE_COLORS = {
-  admin:   "#38BFA1",
-  labs:    "#5AA9E6",
-  hostel:  "#C084E0",
-  library: "#E8A33D",
-};
 
 /* ── helpers ────────────────────────────────────────────────── */
 const fmtHour = (h) => {
@@ -90,7 +83,6 @@ function Controls({ period, setPeriod, zoneId, setZoneId, zones, loading }) {
       display:"flex", alignItems:"center", gap:10, marginBottom:20,
       flexWrap:"wrap",
     }}>
-      {/* Period pills */}
       <div style={{
         display:"flex", gap:4, background:"var(--bg-card)",
         border:"1px solid var(--border)", borderRadius:12, padding:4,
@@ -107,7 +99,6 @@ function Controls({ period, setPeriod, zoneId, setZoneId, zones, loading }) {
         ))}
       </div>
 
-      {/* Zone selector */}
       <div style={{ position:"relative" }}>
         <select
           value={zoneId}
@@ -130,7 +121,6 @@ function Controls({ period, setPeriod, zoneId, setZoneId, zones, loading }) {
         }} />
       </div>
 
-      {/* Loading spinner */}
       {loading && (
         <div style={{ display:"flex", alignItems:"center", gap:6, color:"var(--text-muted)", fontSize:12 }}>
           <div style={{ width:14, height:14, borderRadius:"50%", border:"2px solid var(--border)", borderTopColor:"#39D98A", animation:"spin-slow 0.7s linear infinite" }} />
@@ -155,6 +145,229 @@ function PieLabel({ cx, cy, midAngle, innerRadius, outerRadius, name, pct }) {
   );
 }
 
+/* ── Heatmap ────────────────────────────────────────────────── */
+function Heatmap({ data, zones, isMobile }) {
+  const [tooltip, setTooltip] = useState(null);
+  const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const HOURS = Array.from({ length: 24 }, (_, i) => i);
+
+  // Build a 7x24 grid from baseline_actual — group by day-of-week and hour
+  const grid = useMemo(() => {
+    if (!data?.baseline_actual?.length) return null;
+    const buckets = {};
+    data.baseline_actual.forEach(row => {
+      const d = new Date(row.ts);
+      const dow = (d.getDay() + 6) % 7; // Mon=0
+      const hour = d.getHours();
+      const key = `${dow}-${hour}`;
+      if (!buckets[key]) buckets[key] = [];
+      buckets[key].push(row.kw);
+    });
+    const cells = [];
+    let maxVal = 0;
+    DAYS.forEach((day, di) => {
+      HOURS.forEach(h => {
+        const vals = buckets[`${di}-${h}`] || [];
+        const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+        if (avg > maxVal) maxVal = avg;
+        cells.push({ day, hour: h, avg });
+      });
+    });
+    return { cells, maxVal };
+  }, [data]);
+
+  if (!grid) return <div className="skeleton" style={{ height: 160 }} />;
+
+  const getColor = (val, max) => {
+    if (max === 0 || val === 0) return "var(--heatmap-empty)";
+    const ratio = val / max;
+    if (ratio < 0.25) return `rgba(57,217,138,${0.15 + ratio * 1.5})`;
+    if (ratio < 0.5)  return `rgba(240,180,41,${0.3 + ratio})`;
+    if (ratio < 0.75) return `rgba(255,107,107,${0.4 + ratio * 0.6})`;
+    return `rgba(255,107,107,${0.7 + ratio * 0.3})`;
+  };
+
+  const cellW = isMobile ? 10 : 16;
+  const cellH = isMobile ? 14 : 22;
+
+  return (
+    <div style={{ position: "relative" }}>
+      {/* Hour labels */}
+      <div style={{ display: "flex", marginLeft: isMobile ? 28 : 36, marginBottom: 4, gap: 3 }}>
+        {HOURS.filter(h => h % (isMobile ? 6 : 4) === 0).map(h => (
+          <div key={h} style={{
+            fontSize: 9, color: "var(--text-muted)", width: cellW * (isMobile ? 6 : 4),
+            textAlign: "center",
+          }}>{fmtHour(h)}</div>
+        ))}
+      </div>
+
+      {/* Grid with day labels */}
+      <div>
+        {DAYS.map((day, di) => (
+          <div key={day} style={{ display: "flex", alignItems: "center", gap: 3, marginBottom: 3 }}>
+            <div style={{ width: isMobile ? 24 : 32, fontSize: 9, color: "var(--text-muted)", textAlign: "right", flexShrink: 0 }}>
+              {day}
+            </div>
+            {HOURS.map(h => {
+              const cell = grid.cells.find(c => c.day === day && c.hour === h);
+              const val = cell?.avg || 0;
+              return (
+                <div
+                  key={h}
+                  className="heatmap-cell"
+                  style={{
+                    width: cellW, height: cellH,
+                    background: getColor(val, grid.maxVal),
+                    border: "1px solid rgba(255,255,255,0.04)",
+                  }}
+                  onMouseEnter={e => setTooltip({ val, day, hour: h, x: e.clientX, y: e.clientY })}
+                  onMouseLeave={() => setTooltip(null)}
+                />
+              );
+            })}
+          </div>
+        ))}
+      </div>
+
+      {/* Tooltip */}
+      {tooltip && (
+        <div style={{
+          position: "fixed",
+          left: tooltip.x + 10, top: tooltip.y - 40,
+          background: "var(--tooltip-bg)", border: "1px solid var(--border)",
+          borderRadius: 8, padding: "6px 12px", fontSize: 11.5,
+          pointerEvents: "none", zIndex: 999,
+          boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+        }}>
+          <strong style={{ color: "var(--text-primary)" }}>{tooltip.day} {fmtHour(tooltip.hour)}</strong>
+          <br />
+          <span style={{ color: "#39D98A", fontFamily: "'IBM Plex Mono',monospace" }}>
+            {tooltip.val.toFixed(1)} kW avg
+          </span>
+        </div>
+      )}
+
+      {/* Legend */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 10, color: "var(--text-muted)" }}>Low</span>
+        {["rgba(57,217,138,0.3)", "rgba(240,180,41,0.5)", "rgba(255,107,107,0.6)", "rgba(255,107,107,0.9)"].map((c, i) => (
+          <div key={i} style={{ width: 18, height: 12, borderRadius: 3, background: c, border: "1px solid rgba(255,255,255,0.06)" }} />
+        ))}
+        <span style={{ fontSize: 10, color: "var(--text-muted)" }}>High</span>
+        <span style={{ marginLeft: "auto", fontSize: 10, color: "var(--text-muted)" }}>Avg kW per hour/day</span>
+      </div>
+    </div>
+  );
+}
+
+/* ── AI Insights panel ──────────────────────────────────────── */
+function AIInsights({ data, period }) {
+  const insights = useMemo(() => {
+    if (!data) return [];
+    const results = [];
+
+    // Peak hour insight
+    if (data.peak_hour != null) {
+      results.push({
+        icon: "⚡",
+        color: "#FF6B6B",
+        title: `Peak demand at ${fmtHour(data.peak_hour)}`,
+        desc: `Predicted peak of ${data.peak_kw} kW. Pre-cooling 30–45 min earlier can flatten this by ~12%.`,
+      });
+    }
+
+    // Baseline deviation
+    if (data.baseline_actual?.length) {
+      const recent = data.baseline_actual.slice(-24);
+      const overBaseline = recent.filter(r => r.kw > (r.expected_kw || 0) * 1.1).length;
+      if (overBaseline > 3) {
+        results.push({
+          icon: "📈",
+          color: "#F0B429",
+          title: `${overBaseline} readings above baseline recently`,
+          desc: "Sustained overrun detected. Check HVAC and lab equipment for scheduling opportunities.",
+        });
+      }
+    }
+
+    // Zone contribution
+    if (data.zone_contribution?.length) {
+      const top = [...data.zone_contribution].sort((a, b) => b.total_kwh - a.total_kwh)[0];
+      if (top) {
+        results.push({
+          icon: "🏛",
+          color: "#A78BFA",
+          title: `${top.name} is your biggest consumer`,
+          desc: `Accounts for ${top.pct}% of campus load (${top.total_kwh.toLocaleString()} kWh). Focus efficiency efforts here first.`,
+        });
+      }
+    }
+
+    // Weekend standby
+    if (data.weekday_vs_weekend) {
+      results.push({
+        icon: "💤",
+        color: "#22D3EE",
+        title: "Weekend standby load detected",
+        desc: "Weekend off-hours consumption suggests always-on equipment. Consider scheduled shutdowns to save ~8–15%.",
+      });
+    }
+
+    return results;
+  }, [data, period]);
+
+  if (!insights.length) return null;
+
+  return (
+    <div style={{
+      background: "var(--bg-card)",
+      border: "1px solid rgba(167,139,250,0.2)",
+      borderRadius: 16, padding: "20px 22px",
+      marginBottom: 16,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+        <div style={{
+          width: 30, height: 30, borderRadius: 9,
+          background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.25)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <Sparkles size={14} color="#A78BFA" />
+        </div>
+        <h3 style={{
+          fontFamily: "'Space Grotesk',sans-serif",
+          fontSize: 14, fontWeight: 600, margin: 0, color: "var(--text-panel-title)",
+        }}>AI Insights</h3>
+        <span style={{
+          fontSize: 10.5, color: "#A78BFA", background: "rgba(167,139,250,0.1)",
+          border: "1px solid rgba(167,139,250,0.25)", borderRadius: 6,
+          padding: "2px 8px", fontWeight: 600, marginLeft: "auto",
+        }}>
+          {insights.length} finding{insights.length !== 1 ? "s" : ""}
+        </span>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {insights.map((ins, i) => (
+          <div key={i} style={{
+            display: "flex", gap: 12, alignItems: "flex-start",
+            padding: "12px 14px",
+            background: `${ins.color}06`,
+            border: `1px solid ${ins.color}20`,
+            borderRadius: 12,
+            animation: `fadeInUp 0.4s ease ${i * 60}ms both`,
+          }}>
+            <span style={{ fontSize: 20, flexShrink: 0, marginTop: 1 }}>{ins.icon}</span>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: ins.color, marginBottom: 4 }}>{ins.title}</div>
+              <div style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.55 }}>{ins.desc}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ════════════════════════════════════════════════════════════
    ANALYTICS TAB
 ════════════════════════════════════════════════════════════ */
@@ -164,9 +377,8 @@ export default function AnalyticsTab({ isMobile }) {
   const [zones, setZones]     = useState([]);
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeZones, setActiveZones] = useState({});   // which zones visible in load curve
+  const [activeZones, setActiveZones] = useState({});
 
-  /* load zones once */
   useEffect(() => {
     fetchZones().then(zs => {
       setZones(zs);
@@ -176,7 +388,6 @@ export default function AnalyticsTab({ isMobile }) {
     }).catch(() => {});
   }, []);
 
-  /* load analytics on period/zone change */
   useEffect(() => {
     setLoading(true);
     fetchAnalytics(zoneId, period)
@@ -187,14 +398,8 @@ export default function AnalyticsTab({ isMobile }) {
   const axisColor     = "var(--text-secondary)";
   const gridColor     = "var(--chart-grid)";
   const axisLineColor = "var(--chart-axis)";
-
-  /* visible zones for load-curve toggles */
-  const visibleZones = zones.filter(z => activeZones[z.id]);
-
-  /* toggle zone in load curve */
-  const toggleZone = (id) => setActiveZones(prev => ({ ...prev, [id]: !prev[id] }));
-
-  /* skeleton */
+  const visibleZones  = zones.filter(z => activeZones[z.id]);
+  const toggleZone    = (id) => setActiveZones(prev => ({ ...prev, [id]: !prev[id] }));
   const Sk = ({ h = 200 }) => (
     <div className="skeleton" style={{ width:"100%", height:h, borderRadius:10 }} />
   );
@@ -212,6 +417,9 @@ export default function AnalyticsTab({ isMobile }) {
     <div style={{ animation:"fadeInUp 0.4s ease both" }}>
       {/* Controls */}
       <Controls period={period} setPeriod={setPeriod} zoneId={zoneId} setZoneId={setZoneId} zones={zones} loading={loading} />
+
+      {/* AI Insights */}
+      {!loading && data && <AIInsights data={data} period={period} />}
 
       {/* ── Row 1: Baseline vs Actual + Zone Contribution ── */}
       <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap:16, marginBottom:16 }}>
@@ -235,22 +443,17 @@ export default function AnalyticsTab({ isMobile }) {
                 <YAxis tick={{ fill:axisColor, fontSize:10 }} tickLine={false}
                   axisLine={{ stroke:axisLineColor }} unit=" kW" width={isMobile ? 44 : 52} />
                 <Tooltip content={<ChartTooltip />} />
-                {/* Expected band upper */}
                 <Area type="monotone" dataKey="expected_upper" stroke="none"
                   fill="url(#baseGrad)" name="Expected upper" legendType="none" />
-                {/* Expected lower fills to zero */}
                 <Area type="monotone" dataKey="expected_lower" stroke="none"
                   fill="var(--bg-panel)" name="Expected lower" legendType="none" />
-                {/* Expected mean line */}
                 <Line type="monotone" dataKey="expected_kw" stroke="#39D98A"
                   strokeWidth={1.5} strokeDasharray="5 3" dot={false} name="Expected (baseline)" />
-                {/* Actual line */}
                 <Line type="monotone" dataKey="kw" stroke="#58A6FF"
                   strokeWidth={2} dot={false} name="Actual (kW)" />
               </ComposedChart>
             </ResponsiveContainer>
           )}
-          {/* Legend */}
           <div style={{ display:"flex", gap:16, marginTop:10, flexWrap:"wrap" }}>
             {[
               { color:"#58A6FF", label:"Actual usage", dash:false },
@@ -298,7 +501,6 @@ export default function AnalyticsTab({ isMobile }) {
                   />
                 </PieChart>
               </ResponsiveContainer>
-              {/* Legend */}
               <div style={{ display:"flex", flexDirection:"column", gap:7, marginTop:4 }}>
                 {(data?.zone_contribution || []).map((z, i) => (
                   <div key={i} style={{ display:"flex", alignItems:"center", gap:8 }}>
@@ -321,7 +523,6 @@ export default function AnalyticsTab({ isMobile }) {
 
         {/* 3. Load Curve by Hour */}
         <Section title="Load Curve by Hour of Day" subtitle="Avg consumption per hour — where peaks live" icon={Clock} accent="#F0B429" delay={80}>
-          {/* Zone toggles */}
           <div style={{ display:"flex", gap:6, marginBottom:14, flexWrap:"wrap" }}>
             {zones.map(z => (
               <button key={z.id} onClick={() => toggleZone(z.id)} style={{
@@ -348,7 +549,6 @@ export default function AnalyticsTab({ isMobile }) {
                 <YAxis tick={{ fill:axisColor, fontSize:10 }} tickLine={false}
                   axisLine={{ stroke:axisLineColor }} unit=" kW" width={isMobile ? 40 : 50} />
                 <Tooltip content={<ChartTooltip />} labelFormatter={fmtHour} />
-                {/* Peak reference line */}
                 {data?.peak_hour != null && (
                   <ReferenceLine x={data.peak_hour} stroke="#FF6B6B" strokeDasharray="4 3"
                     label={{ value:"Peak", fill:"#FF6B6B", fontSize:10, position:"top" }} />
@@ -364,7 +564,6 @@ export default function AnalyticsTab({ isMobile }) {
 
         {/* 4. Weekday vs Weekend */}
         <Section title="Weekday vs. Weekend" subtitle="Occupancy-driven load vs. always-on standby floor" icon={Calendar} accent="#22D3EE" delay={160}>
-          {/* Zone selector for this chart */}
           <div style={{ display:"flex", gap:6, marginBottom:14, flexWrap:"wrap" }}>
             {zones.map(z => (
               <button key={z.id} onClick={() => setZoneId(z.id === zoneId ? "all" : z.id)} style={{
@@ -415,8 +614,13 @@ export default function AnalyticsTab({ isMobile }) {
         </Section>
       </div>
 
+      {/* ── Heatmap ── */}
+      <Section title="Consumption Heatmap" subtitle="Hour-of-day × day-of-week — spot hidden waste patterns" icon={Grid} accent="#22D3EE" delay={220}>
+        {loading ? <Sk h={180} /> : <Heatmap data={data} zones={zones} isMobile={isMobile} />}
+      </Section>
+
       {/* ── Row 3: Peak Forecast ── */}
-      <Section title="Peak Demand Forecast" subtitle="Predicted hourly campus-wide load — 7-day rolling average" icon={Zap} accent="#FF6B6B" delay={240}>
+      <Section title="Peak Demand Forecast" subtitle="Predicted hourly campus-wide load — 7-day rolling average" icon={Zap} accent="#FF6B6B" delay={280}>
         {loading ? <Sk h={isMobile ? 160 : 200} /> : (
           <ResponsiveContainer width="100%" height={isMobile ? 160 : 200}>
             <ComposedChart data={data?.forecast_curve || []} margin={{ top:5, right:8, left: isMobile ? -20 : -10, bottom:0 }}>
@@ -433,7 +637,6 @@ export default function AnalyticsTab({ isMobile }) {
               <YAxis tick={{ fill:axisColor, fontSize:10 }} tickLine={false}
                 axisLine={{ stroke:axisLineColor }} unit=" kW" width={isMobile ? 44 : 52} />
               <Tooltip content={<ChartTooltip />} labelFormatter={fmtHour} />
-              {/* Peak window highlight */}
               {data?.peak_hour != null && (
                 <ReferenceLine x={data.peak_hour} stroke="#FF6B6B" strokeWidth={2} strokeDasharray="4 3"
                   label={{ value:`Peak ${data.peak_kw} kW`, fill:"#FF6B6B", fontSize:10, position:"insideTopRight" }} />
@@ -444,7 +647,6 @@ export default function AnalyticsTab({ isMobile }) {
             </ComposedChart>
           </ResponsiveContainer>
         )}
-        {/* Insight callout */}
         {data?.peak_hour != null && !loading && (
           <div style={{
             marginTop:14, padding:"10px 14px",

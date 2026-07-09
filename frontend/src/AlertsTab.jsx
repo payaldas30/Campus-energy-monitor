@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   AlertTriangle, CheckCircle, Clock, XCircle, Filter,
   ChevronRight, Zap, RefreshCw, ChevronDown, Bell, Link,
@@ -7,9 +7,9 @@ import { fetchAlerts, fetchZones } from "./api";
 
 /* ── severity config ────────────────────────────────────────── */
 const SEV = {
-  severe:   { label:"Severe",   color:"#FF6B6B", bg:"rgba(255,107,107,0.10)", border:"rgba(255,107,107,0.3)", icon:"🔴" },
-  moderate: { label:"Moderate", color:"#F0B429", bg:"rgba(240,180,41,0.10)",  border:"rgba(240,180,41,0.3)",  icon:"🟡" },
-  mild:     { label:"Mild",     color:"#58A6FF", bg:"rgba(88,166,255,0.10)",  border:"rgba(88,166,255,0.3)",  icon:"🔵" },
+  severe:   { label:"Severe",   color:"#FF6B6B", bg:"rgba(255,107,107,0.10)", border:"rgba(255,107,107,0.3)", dot:"#FF6B6B" },
+  moderate: { label:"Moderate", color:"#F0B429", bg:"rgba(240,180,41,0.10)",  border:"rgba(240,180,41,0.3)",  dot:"#F0B429" },
+  mild:     { label:"Mild",     color:"#58A6FF", bg:"rgba(88,166,255,0.10)",  border:"rgba(88,166,255,0.3)",  dot:"#58A6FF" },
 };
 
 const STATUS_CYCLE = { new:"acknowledged", acknowledged:"resolved", resolved:"new" };
@@ -35,6 +35,25 @@ const timeAgo = (iso) => {
   return `${Math.floor(h / 24)}d ago`;
 };
 
+/* ── Live ticker "last updated" ─────────────────────────────── */
+function LiveTicker({ lastUpdated }) {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    if (!lastUpdated) return;
+    const id = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - lastUpdated) / 1000));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [lastUpdated]);
+  if (!lastUpdated) return null;
+  return (
+    <span style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 5 }}>
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#39D98A", animation: "pulse-dot 1.5s ease infinite", flexShrink: 0 }} />
+      Updated {elapsed < 5 ? "just now" : `${elapsed}s ago`}
+    </span>
+  );
+}
+
 /* ── severity badge ─────────────────────────────────────────── */
 function SevBadge({ severity, size = "sm" }) {
   const s = SEV[severity] || SEV.mild;
@@ -42,12 +61,12 @@ function SevBadge({ severity, size = "sm" }) {
   const fs  = size === "lg" ? 12 : 10.5;
   return (
     <span style={{
-      display:"inline-flex", alignItems:"center", gap:4,
+      display:"inline-flex", alignItems:"center", gap:5,
       padding:pad, borderRadius:999, fontSize:fs, fontWeight:600,
       background:s.bg, border:`1px solid ${s.border}`, color:s.color,
       whiteSpace:"nowrap",
     }}>
-      <span style={{ fontSize:fs - 1 }}>{s.icon}</span>
+      <span style={{ width: fs - 2, height: fs - 2, borderRadius:"50%", background: s.dot, flexShrink: 0 }} />
       {s.label}
     </span>
   );
@@ -94,6 +113,8 @@ function AlertCard({ alert, status, onStatusChange, index }) {
   const [simulating, setSimulating] = useState(false);
   const [simulated, setSimulated] = useState(false);
   const sev = SEV[alert.severity] || SEV.mild;
+  const isSevere = alert.severity === "severe";
+  const isModerate = alert.severity === "moderate";
 
   const handleSimulate = (e) => {
     e.stopPropagation();
@@ -107,38 +128,38 @@ function AlertCard({ alert, status, onStatusChange, index }) {
 
   return (
     <div style={{
-      background:"var(--bg-card)", border:`1px solid var(--border)`,
-      borderTop:`3px solid ${sev.color}`, /* Changed to top border for grid cards */
-      borderRadius:16, overflow:"hidden",
-      animation:`fadeInUp 0.5s ease both`,
+      background:"var(--bg-card)",
+      border:`1px solid var(--border)`,
+      borderLeft:`3px solid ${sev.color}`,
+      borderRadius:14, overflow:"hidden",
       animationDelay:`${index * 50}ms`,
-      transition:"transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease",
+      transition:"transform 0.25s ease, box-shadow 0.25s ease",
       display: "flex", flexDirection: "column",
-      height: expanded ? "auto" : "100%",
     }}
     className="alert-glass-card"
-    onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = `0 10px 30px ${sev.bg}`; }}
+    onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = `0 8px 24px rgba(0,0,0,0.12)`; }}
     onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
     >
+
       {/* Main row */}
       <div style={{
         display:"flex", alignItems:"flex-start", gap:12, padding:"16px",
         cursor:"pointer", flex: 1,
       }} onClick={() => setExpanded(v => !v)}>
-        {/* Severity dot */}
+        {/* Severity indicator */}
         <div style={{
-          width:40, height:40, borderRadius:12,
+          width:36, height:36, borderRadius:10,
           background:sev.bg, border:`1px solid ${sev.border}`,
           display:"flex", alignItems:"center", justifyContent:"center",
           flexShrink:0,
-          fontSize:18,
-          boxShadow: `inset 0 0 10px ${sev.bg}`
-        }}>{sev.icon}</div>
+        }}>
+          <AlertTriangle size={16} color={sev.color} />
+        </div>
 
         {/* Content */}
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:6 }}>
-            <span style={{ fontSize:14, fontWeight:600, color:"var(--text-primary)", lineHeight: 1.2 }}>
+            <span style={{ fontSize:13.5, fontWeight:600, color:"var(--text-primary)", lineHeight: 1.3 }}>
               {alert.label}
             </span>
           </div>
@@ -155,19 +176,18 @@ function AlertCard({ alert, status, onStatusChange, index }) {
               {alert.zone_name}
             </span>
           </div>
-          
-          {/* Timestamp inline */}
+
           <div style={{ fontSize:11, color:"var(--text-muted)", display: "flex", alignItems: "center", gap: 4 }}>
              <Clock size={12} /> {fmtTs(alert.ts)} · {timeAgo(alert.ts)}
           </div>
         </div>
       </div>
-      
-      {/* Metrics Strip always visible at bottom of unexpanded card */}
-      <div style={{ 
-        display:"flex", alignItems:"center", justifyContent: "space-between", 
-        padding:"10px 16px", background: "rgba(0,0,0,0.1)", borderTop: "1px solid var(--border)",
-        marginTop: "auto"
+
+      {/* Metrics Strip */}
+      <div style={{
+        display:"flex", alignItems:"center", justifyContent: "space-between",
+        padding:"10px 16px", background: "rgba(0,0,0,0.08)", borderTop: "1px solid var(--border)",
+        marginTop: "auto", position: "relative", zIndex: 1,
       }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
           <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:16, fontWeight:700, color:sev.color }}>{alert.kw} kW</span>
@@ -186,9 +206,9 @@ function AlertCard({ alert, status, onStatusChange, index }) {
           borderTop:"1px solid var(--border)",
           animation:"scaleIn 0.2s ease",
           background:"var(--bg-panel)",
+          position: "relative", zIndex: 1,
         }}>
           <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12, flexWrap:"wrap", paddingTop:12 }}>
-            {/* Detail metrics */}
             <div style={{ display:"flex", gap:16, flexWrap:"wrap" }}>
               {[
                 { label:"Actual load",   value:`${alert.kw} kW`,            color:sev.color },
@@ -205,13 +225,11 @@ function AlertCard({ alert, status, onStatusChange, index }) {
               ))}
             </div>
 
-            {/* Status toggle */}
             <div onClick={(e) => e.stopPropagation()}>
               <StatusBtn status={status} onClick={(e) => { e.stopPropagation(); e.preventDefault(); onStatusChange(); }} />
             </div>
           </div>
 
-          {/* Expanded Linked recommendation */}
           {alert.rec_link && (
             <div style={{
               marginTop:12, padding:"12px",
@@ -223,20 +241,20 @@ function AlertCard({ alert, status, onStatusChange, index }) {
               <div>
                 <span style={{ fontSize:11, color:"var(--text-muted)", display:"block", marginBottom: 4 }}>RECOMMENDED INTERVENTION</span>
                 <span style={{ fontSize:13, color:"#58A6FF", fontWeight:600, lineHeight: 1.4 }}>{alert.rec_link}</span>
-                <button 
+                <button
                   onClick={handleSimulate}
                   disabled={simulating || simulated}
                   style={{
                     marginTop: 10, padding: "6px 12px", borderRadius: 6, fontSize: 11, fontWeight: 600,
-                    background: simulated ? "rgba(57,217,138,0.2)" : "#58A6FF", 
-                    color: simulated ? "#39D98A" : "#000", 
-                    border: simulated ? "1px solid rgba(57,217,138,0.5)" : "none", 
-                    cursor: (simulating || simulated) ? "default" : "pointer", 
+                    background: simulated ? "rgba(57,217,138,0.2)" : "#58A6FF",
+                    color: simulated ? "#39D98A" : "#000",
+                    border: simulated ? "1px solid rgba(57,217,138,0.5)" : "none",
+                    cursor: (simulating || simulated) ? "default" : "pointer",
                     display: "flex", alignItems: "center", gap: 6,
                     transition: "all 0.3s ease"
                 }}>
                   {simulating ? (
-                    <><RefreshCw size={12} className="spin-slow" /> Simulating...</>
+                    <><RefreshCw size={12} style={{ animation: "spin-slow 0.8s linear infinite" }} /> Simulating...</>
                   ) : simulated ? (
                     <><CheckCircle size={12} /> Optimization applied</>
                   ) : (
@@ -264,12 +282,11 @@ export default function AlertsTab({ isMobile }) {
   const [filterZone, setFilterZone] = useState("all");
   const [filterSev,  setFilterSev]  = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [statusMap, setStatusMap]   = useState({});   // alert index → status string
+  const [statusMap, setStatusMap]   = useState({});
+  const [lastUpdated, setLastUpdated] = useState(null);
 
-  /* load zones */
   useEffect(() => { fetchZones().then(setZones).catch(() => {}); }, []);
 
-  /* load alerts whenever filters change */
   const load = useCallback(() => {
     setLoading(true);
     fetchAlerts(filterZone, filterSev)
@@ -278,13 +295,13 @@ export default function AlertsTab({ isMobile }) {
         setSevCounts(d.severity_counts || {});
         setTotal(d.total || 0);
         setLoading(false);
+        setLastUpdated(Date.now());
       })
       .catch(() => setLoading(false));
   }, [filterZone, filterSev]);
 
   useEffect(() => { load(); }, [load]);
 
-  /* cycle status for one alert */
   const cycleStatus = (key, currentStatus) => {
     const next = STATUS_CYCLE[currentStatus] || "acknowledged";
     setStatusMap(prev => ({ ...prev, [key]: next }));
@@ -292,7 +309,6 @@ export default function AlertsTab({ isMobile }) {
 
   const getStatus = (key) => statusMap[key] || "new";
 
-  /* counts by status */
   const statusCounts = alerts.reduce((acc, a, i) => {
     const s = getStatus(i);
     acc[s] = (acc[s] || 0) + 1;
@@ -302,14 +318,15 @@ export default function AlertsTab({ isMobile }) {
   return (
     <div style={{ animation:"fadeInUp 0.4s ease both" }}>
 
-      {/* ── Stats summary ─────────────────────────────── */}
+      {/* ── Stats summary + live ticker ────────────────── */}
       <div style={{
         display:"flex", gap:10, marginBottom:20, flexWrap:"wrap",
         padding:"16px 20px",
         background:"var(--bg-card)", border:"1px solid var(--border)",
         borderRadius:14,
+        alignItems: "center",
       }}>
-        <StatPill count={total} label="Total alerts" color="#E6EDF3" bg="rgba(230,237,243,0.05)" />
+        <StatPill count={total} label="Total alerts" color="var(--text-secondary)" bg="rgba(230,237,243,0.05)" />
         <div style={{ width:1, background:"var(--border)", margin:"0 4px", alignSelf:"stretch" }} />
         <StatPill count={sevCounts.severe   || 0} label="Severe"   color={SEV.severe.color}   bg={SEV.severe.bg} />
         <StatPill count={sevCounts.moderate || 0} label="Moderate" color={SEV.moderate.color} bg={SEV.moderate.bg} />
@@ -318,6 +335,9 @@ export default function AlertsTab({ isMobile }) {
         <StatPill count={statusCounts.new          || 0} label="New"          color="#FF6B6B" bg="rgba(255,107,107,0.08)" />
         <StatPill count={statusCounts.acknowledged || 0} label="Acknowledged" color="#F0B429" bg="rgba(240,180,41,0.08)" />
         <StatPill count={statusCounts.resolved     || 0} label="Resolved"     color="#39D98A" bg="rgba(57,217,138,0.08)" />
+        <div style={{ marginLeft: "auto" }}>
+          <LiveTicker lastUpdated={lastUpdated} />
+        </div>
       </div>
 
       {/* ── Filters ───────────────────────────────────── */}
@@ -328,7 +348,6 @@ export default function AlertsTab({ isMobile }) {
           <Filter size={13} /> Filters:
         </div>
 
-        {/* Severity filter */}
         <div style={{
           display:"flex", gap:3, background:"var(--bg-card)",
           border:"1px solid var(--border)", borderRadius:10, padding:3,
@@ -345,7 +364,6 @@ export default function AlertsTab({ isMobile }) {
           ))}
         </div>
 
-        {/* Status filter */}
         <div style={{
           display:"flex", gap:3, background:"var(--bg-card)",
           border:"1px solid var(--border)", borderRadius:10, padding:3,
@@ -368,7 +386,6 @@ export default function AlertsTab({ isMobile }) {
           })}
         </div>
 
-        {/* Zone dropdown */}
         <div style={{ position:"relative" }}>
           <select value={filterZone} onChange={e => setFilterZone(e.target.value)} style={{
             appearance:"none", WebkitAppearance:"none",
@@ -383,7 +400,6 @@ export default function AlertsTab({ isMobile }) {
           <ChevronDown size={12} style={{ position:"absolute", right:8, top:"50%", transform:"translateY(-50%)", color:"var(--text-muted)", pointerEvents:"none" }} />
         </div>
 
-        {/* Refresh */}
         <button onClick={load} style={{
           display:"flex", alignItems:"center", gap:5,
           padding:"7px 12px", borderRadius:10, fontSize:12,
@@ -412,7 +428,7 @@ export default function AlertsTab({ isMobile }) {
         background:"rgba(88,166,255,0.05)", border:"1px solid rgba(88,166,255,0.15)",
         fontSize:12, color:"var(--text-secondary)", lineHeight:1.5,
       }}>
-        💡 Click any alert to expand details. Use the status button to work through alerts: <strong style={{ color:"#FF6B6B" }}>New</strong> → <strong style={{ color:"#F0B429" }}>Acknowledged</strong> → <strong style={{ color:"#39D98A" }}>Resolved</strong>.
+        💡 Click any alert to expand details. Severe cards pulse red. Use the status button to work through: <strong style={{ color:"#FF6B6B" }}>New</strong> → <strong style={{ color:"#F0B429" }}>Acknowledged</strong> → <strong style={{ color:"#39D98A" }}>Resolved</strong>.
       </div>
 
       {/* ── Alert feed ────────────────────────────────── */}
@@ -436,24 +452,22 @@ export default function AlertsTab({ isMobile }) {
         </div>
       ) : (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
-          {/* Group by severity: severe first */}
           {["severe", "moderate", "mild"].map(sev => {
             const filteredAlerts = alerts
               .map((a, i) => ({ ...a, _origIdx: i }))
               .filter(a => filterStatus === "all" || getStatus(a._origIdx) === filterStatus);
-            
+
             const group = filteredAlerts.filter(a => a.severity === sev);
             if (!group.length) return null;
             const cfg = SEV[sev];
             return (
               <div key={sev} style={{ animation:"fadeIn 0.5s ease" }}>
-                {/* Group header */}
                 <div style={{
                   display:"flex", alignItems:"center", gap:8,
                   padding:"6px 0", marginBottom:12,
                 }}>
-                  <span style={{ fontSize:14, fontWeight:700, color:cfg.color, textTransform: "uppercase", letterSpacing: 1 }}>
-                    {cfg.icon} {cfg.label} ALERTS
+                  <span style={{ fontSize:13, fontWeight:700, color:cfg.color, textTransform: "uppercase", letterSpacing: 1 }}>
+                    {cfg.label} ALERTS
                   </span>
                   <span style={{
                     fontSize:11, color:cfg.color, background:cfg.bg,
@@ -463,7 +477,6 @@ export default function AlertsTab({ isMobile }) {
                   <div style={{ flex:1, height:1, background:`linear-gradient(90deg, ${cfg.color}40, transparent)` }} />
                 </div>
 
-                {/* GRID LAYOUT for cards */}
                 <div style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
@@ -487,7 +500,6 @@ export default function AlertsTab({ isMobile }) {
             );
           })}
 
-          {/* Load count */}
           <p style={{ textAlign:"center", fontSize:12, color:"var(--text-muted)", paddingTop:8 }}>
             Showing {alerts.length} of {total} alerts
           </p>
