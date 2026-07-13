@@ -366,19 +366,6 @@ export default function AboutTab({ isMobile }) {
         </div>
       </div>
 
-      {/* ── Footer credits ─────────────────────────────────── */}
-      <div style={{
-        textAlign: "center", padding: "16px 0",
-        borderTop: "1px solid var(--border)",
-        display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-        color: "var(--text-muted)", fontSize: 12.5,
-        flexWrap: "wrap",
-      }}>
-        <span>Built with</span>
-        <Heart size={12} color="#FF6B6B" fill="#FF6B6B" />
-        <span>for smart campuses ·</span>
-        <span style={{ color: "#39D98A", fontWeight: 600 }}>EnergyIQ © 2026</span>
-      </div>
     </div>
   );
 }

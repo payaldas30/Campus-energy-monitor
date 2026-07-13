@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Zap, ArrowRight, Activity, TrendingUp, Shield, Leaf,
-  BarChart2, Bell, ChevronRight, Play, Sun, Moon,
-  CheckCircle, Star, ArrowUpRight, Menu, X, GitBranch,
+  BarChart2, Bell, ChevronRight, ChevronDown, Play, Sun, Moon,
+  CheckCircle, Star, ArrowUpRight, Menu, X, GitBranch, ExternalLink,
 } from "lucide-react";
 
 /* ── Scroll reveal hook ─────────────────────────────────────── */
@@ -53,26 +53,51 @@ function CountUp({ end, suffix = "", duration = 2000 }) {
 }
 
 /* ── Energy flow SVG ────────────────────────────────────────── */
-function EnergyFlowSVG() {
+function EnergyFlowSVG({ theme }) {
+  const isLight = theme === "light";
+  const HUB = { cx: 320, cy: 220 };
+  const nodes = [
+    { cx: 110, cy: 90,  color: "#1DA463", lightColor: "#1DA463", darkColor: "#39D98A", label: "ADMIN",   delay: 0 },
+    { cx: 490, cy: 90,  color: "#0969DA", lightColor: "#0969DA", darkColor: "#58A6FF", label: "LABS",    delay: 0.5 },
+    { cx: 95,  cy: 330, color: "#7C3AED", lightColor: "#7C3AED", darkColor: "#A78BFA", label: "HOSTEL",  delay: 1.0 },
+    { cx: 510, cy: 330, color: "#0891B2", lightColor: "#0891B2", darkColor: "#22D3EE", label: "LIBRARY", delay: 1.5 },
+    { cx: 320, cy: 45,  color: "#D97706", lightColor: "#D97706", darkColor: "#F0B429", label: "SOLAR",   delay: 2.0 },
+    { cx: 560, cy: 220, color: "#DC2626", lightColor: "#DC2626", darkColor: "#FF6B6B", label: "GRID",    delay: 0.3 },
+  ].map(n => ({ ...n, color: isLight ? n.lightColor : n.darkColor }));
+
+  const hubColor    = isLight ? "#1DA463" : "#39D98A";
+  const gridStroke  = isLight ? "rgba(0,0,0,0.07)"   : "rgba(255,255,255,0.03)";
+  const lineOpacity = isLight ? 0.55 : 0.25;
+  const hubRingOp   = isLight ? [0.9, 0.5] : [0.6, 0.25];
+  const pulseOp     = isLight ? 0.65 : 0.4;
+  const hubFill     = isLight ? `rgba(29,164,99,0.18)` : "rgba(57,217,138,0.22)";
+
   return (
     <svg
-      viewBox="0 0 600 400"
-      style={{ width: "100%", maxWidth: 600, opacity: 0.9 }}
+      viewBox="0 0 640 420"
+      style={{ width: "100%", maxWidth: 640, opacity: 1 }}
       xmlns="http://www.w3.org/2000/svg"
     >
       <defs>
-        <linearGradient id="lineGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#39D98A" stopOpacity="0" />
-          <stop offset="50%" stopColor="#39D98A" stopOpacity="1" />
-          <stop offset="100%" stopColor="#22D3EE" stopOpacity="0" />
-        </linearGradient>
-        <linearGradient id="lineGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#58A6FF" stopOpacity="0" />
-          <stop offset="50%" stopColor="#58A6FF" stopOpacity="1" />
-          <stop offset="100%" stopColor="#A78BFA" stopOpacity="0" />
-        </linearGradient>
-        <filter id="glow">
-          <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+        <radialGradient id="hubGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor={hubColor} stopOpacity={isLight ? 0.22 : 0.3} />
+          <stop offset="100%" stopColor={hubColor} stopOpacity="0" />
+        </radialGradient>
+        {nodes.map(({ color, label }) => (
+          <radialGradient key={label} id={`ng-${label}`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor={color} stopOpacity={isLight ? 0.3 : 0.4} />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </radialGradient>
+        ))}
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+          <feMerge>
+            <feMergeNode in="coloredBlur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        <filter id="glowStrong" x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur stdDeviation="7" result="coloredBlur" />
           <feMerge>
             <feMergeNode in="coloredBlur" />
             <feMergeNode in="SourceGraphic" />
@@ -80,56 +105,77 @@ function EnergyFlowSVG() {
         </filter>
       </defs>
 
-      {/* Grid lines */}
-      {[0, 1, 2, 3, 4].map((i) => (
-        <line key={`h${i}`} x1="0" y1={80 * i} x2="600" y2={80 * i}
-          stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+      {/* Grid */}
+      {[0,1,2,3,4,5].map(i => (
+        <line key={`h${i}`} x1="0" y1={70*i} x2="640" y2={70*i}
+          stroke={gridStroke} strokeWidth="1" />
       ))}
-      {[0, 1, 2, 3, 4, 5].map((i) => (
-        <line key={`v${i}`} x1={120 * i} y1="0" x2={120 * i} y2="400"
-          stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+      {[0,1,2,3,4,5,6].map(i => (
+        <line key={`v${i}`} x1={106.6*i} y1="0" x2={106.6*i} y2="420"
+          stroke={gridStroke} strokeWidth="1" />
       ))}
 
-      {/* Central hub */}
-      <circle cx="300" cy="200" r="50" fill="rgba(57,217,138,0.06)" stroke="rgba(57,217,138,0.3)" strokeWidth="1" />
-      <circle cx="300" cy="200" r="35" fill="rgba(57,217,138,0.1)" stroke="rgba(57,217,138,0.5)" strokeWidth="1.5" />
-      <circle cx="300" cy="200" r="22" fill="rgba(57,217,138,0.2)" />
-      <text x="300" y="207" textAnchor="middle" fontSize="20" fill="#39D98A" style={{ filter: "url(#glow)" }}>⚡</text>
+      {/* Hub glow backdrop */}
+      <circle cx={HUB.cx} cy={HUB.cy} r="90" fill="url(#hubGlow)" />
+
+      {/* Connector lines */}
+      {nodes.map(({ cx, cy, color, label, delay }) => (
+        <line key={`line-${label}`}
+          x1={HUB.cx} y1={HUB.cy} x2={cx} y2={cy}
+          stroke={color} strokeWidth={isLight ? 1.8 : 1.2} strokeOpacity={lineOpacity}
+          strokeDasharray="6 4"
+          style={{ animation: `energy-flow 3s linear ${delay}s infinite` }}
+        />
+      ))}
+
+      {/* Animated data-packet dots */}
+      {nodes.map(({ cx, cy, color, label, delay }) => (
+        <circle key={`pkt-${label}`} r={isLight ? 4 : 3} fill={color}
+          style={{ filter: "url(#glow)", opacity: 1 }}
+        >
+          <animateMotion dur="3s" begin={`${delay}s`} repeatCount="indefinite"
+            path={`M${HUB.cx},${HUB.cy} L${cx},${cy}`} />
+        </circle>
+      ))}
+
+      {/* Central hub rings */}
+      {[58, 44, 30].map((r, i) => (
+        <circle key={`hr${i}`} cx={HUB.cx} cy={HUB.cy} r={r}
+          fill="none" stroke={hubColor}
+          strokeWidth={i === 2 ? 2 : 1}
+          strokeOpacity={i === 2 ? hubRingOp[0] : hubRingOp[1]}
+          strokeDasharray={i === 1 ? "4 3" : "none"}
+          style={i === 1 ? { animation: "spin-slow 12s linear infinite" } : {}}
+        />
+      ))}
 
       {/* Pulse rings */}
-      {[70, 90, 110].map((r, i) => (
-        <circle key={i} cx="300" cy="200" r={r}
-          fill="none" stroke="#39D98A" strokeWidth="0.5" strokeOpacity="0.3"
-          style={{ animation: `pulse-ring ${2 + i * 0.8}s ease-out ${i * 0.6}s infinite` }} />
+      {[72, 92, 112].map((r, i) => (
+        <circle key={`pr${i}`} cx={HUB.cx} cy={HUB.cy} r={r}
+          fill="none" stroke={hubColor} strokeWidth={isLight ? 1 : 0.6} strokeOpacity={pulseOp}
+          style={{ animation: `pulse-ring ${2.2 + i * 0.9}s ease-out ${i * 0.7}s infinite` }} />
       ))}
 
-      {/* Connecting paths */}
-      {[
-        { d: "M300,200 L120,80",  grad: "lineGrad1", delay: 0 },
-        { d: "M300,200 L480,80",  grad: "lineGrad2", delay: 0.5 },
-        { d: "M300,200 L100,300", grad: "lineGrad1", delay: 1 },
-        { d: "M300,200 L500,300", grad: "lineGrad2", delay: 1.5 },
-        { d: "M300,200 L300,50",  grad: "lineGrad1", delay: 2 },
-        { d: "M300,200 L560,200", grad: "lineGrad2", delay: 0.3 },
-      ].map(({ d, grad, delay }, i) => (
-        <path key={i} d={d} stroke={`url(#${grad})`} strokeWidth="1.5" fill="none" strokeDasharray="5,3"
-          style={{ animation: `energy-flow 3s linear ${delay}s infinite` }} />
-      ))}
+      {/* Hub fill + icon */}
+      <circle cx={HUB.cx} cy={HUB.cy} r="22" fill={hubFill} />
+      <text x={HUB.cx} y={HUB.cy + 8} textAnchor="middle" fontSize="22"
+        fill={hubColor} style={{ filter: "url(#glowStrong)" }}>⚡</text>
 
       {/* Satellite nodes */}
-      {[
-        { cx: 120, cy: 80,  color: "#39D98A", label: "ADMIN" },
-        { cx: 480, cy: 80,  color: "#58A6FF", label: "LABS" },
-        { cx: 100, cy: 300, color: "#A78BFA", label: "HOSTEL" },
-        { cx: 500, cy: 300, color: "#22D3EE", label: "LIBRARY" },
-        { cx: 300, cy: 50,  color: "#F0B429", label: "SOLAR" },
-        { cx: 560, cy: 200, color: "#FF6B6B", label: "GRID" },
-      ].map(({ cx, cy, color, label }) => (
+      {nodes.map(({ cx, cy, color, label }) => (
         <g key={label}>
-          <circle cx={cx} cy={cy} r="24" fill={`${color}15`} stroke={`${color}50`} strokeWidth="1.5" />
-          <circle cx={cx} cy={cy} r="14" fill={`${color}25`} />
-          <circle cx={cx} cy={cy} r="5" fill={color} style={{ filter: "url(#glow)" }} />
-          <text x={cx} y={cy + 36} textAnchor="middle" fontSize="8" fill={color} fontWeight="600" letterSpacing="1">{label}</text>
+          <circle cx={cx} cy={cy} r="32" fill={`url(#ng-${label})`} />
+          <circle cx={cx} cy={cy} r="24" fill="none" stroke={color}
+            strokeWidth={isLight ? 1.5 : 1} strokeOpacity={isLight ? 0.7 : 0.35}
+            strokeDasharray="3 3"
+            style={{ animation: "spin-slow 20s linear infinite" }} />
+          <circle cx={cx} cy={cy} r="17" fill={`${color}${isLight ? "28" : "18"}`} stroke={color}
+            strokeWidth="2" strokeOpacity={isLight ? 0.9 : 0.55} />
+          <circle cx={cx} cy={cy} r="6" fill={color}
+            style={{ filter: "url(#glowStrong)" }} />
+          <text x={cx} y={cy + 40} textAnchor="middle" fontSize={isLight ? 10 : 9}
+            fill={color} fontWeight="800" letterSpacing="1.5"
+            style={{ filter: isLight ? "none" : "url(#glow)" }}>{label}</text>
         </g>
       ))}
     </svg>
@@ -142,31 +188,43 @@ const FEATURES = [
     icon: Activity, color: "#39D98A",
     title: "Real-Time Monitoring",
     desc: "Live WebSocket feeds push 15-minute interval data from every campus zone directly to your dashboard.",
+    detail: "Our WebSocket pipeline streams sub-meter readings every 15 minutes. You get instant visibility into zone-level consumption spikes, letting your team respond before small issues become big bills.",
+    link: "dashboard",
   },
   {
     icon: TrendingUp, color: "#58A6FF",
     title: "Peak Demand Forecasting",
     desc: "Rolling 7-day baseline models predict hourly demand peaks with statistical confidence intervals.",
+    detail: "Using a 7-day rolling average baseline, the system forecasts peak demand hours with ±5% accuracy. Confidence intervals let facility managers plan load-shedding or HVAC schedules in advance.",
+    link: "analytics",
   },
   {
     icon: Shield, color: "#A78BFA",
     title: "Anomaly Detection",
     desc: "Z-score analysis flags consumption spikes the moment they deviate beyond expected thresholds.",
+    detail: "Every reading is scored against its historical Z-score. Deviations beyond 2σ trigger automatic anomaly flags with zone, timestamp, and magnitude — so no abnormal draw goes unnoticed.",
+    link: "alerts",
   },
   {
     icon: Leaf, color: "#22D3EE",
     title: "Carbon Optimization",
     desc: "Smart intervention recommendations reduce your campus carbon footprint and slash utility costs.",
+    detail: "The recommendations engine converts kWh readings into CO₂ equivalents and suggests concrete actions — e.g., 'Shift AC peak in Lab A to off-peak hours to save 120 kg CO₂/month'.",
+    link: "analytics",
   },
   {
     icon: BarChart2, color: "#F0B429",
     title: "Interactive Analytics",
     desc: "Heatmaps, load curves, weekday/weekend patterns — every angle of your energy story visualized.",
+    detail: "Drill into 48-hour history charts, weekday vs weekend overlays, and zonal heatmaps. Recharts-powered visuals update live so you always see the freshest data without a page refresh.",
+    link: "analytics",
   },
   {
     icon: Bell, color: "#FF6B6B",
     title: "Smart Alert Workflow",
     desc: "Tiered alert system with severity scoring, status pipeline and direct action recommendations.",
+    detail: "Alerts are graded Low / Medium / High / Critical. Each alert moves through a status pipeline (Open → Investigating → Resolved) and includes a recommended action so your team always knows the next step.",
+    link: "alerts",
   },
 ];
 
@@ -204,6 +262,70 @@ const TICKERS = [
 /* ════════════════════════════════════════════════════════════
    LANDING PAGE
 ════════════════════════════════════════════════════════════ */
+/* ── Feature cards (no expand) ───────────────────────────────── */
+function FeatureCard({ feature, index, onGetStarted }) {
+  const [hovered, setHovered] = useState(false);
+  const { icon: Icon, color, title, desc } = feature;
+
+  return (
+    <div
+      className="feature-card reveal"
+      data-delay={index * 80}
+      onMouseEnter={e => {
+        setHovered(true);
+        e.currentTarget.style.borderColor = `${color}40`;
+        e.currentTarget.style.boxShadow = `0 16px 48px ${color}14`;
+        e.currentTarget.style.transform = "translateY(-6px)";
+      }}
+      onMouseLeave={e => {
+        setHovered(false);
+        e.currentTarget.style.borderColor = "var(--feat-card-border)";
+        e.currentTarget.style.boxShadow = "none";
+        e.currentTarget.style.transform = "translateY(0)";
+      }}
+    >
+      <div className="feature-card-icon" style={{
+        background: `${color}12`,
+        border: `1px solid ${color}25`,
+      }}>
+        <Icon size={22} color={color} />
+      </div>
+      <h3 className="feature-card-title">{title}</h3>
+      <p className="feature-card-desc">{desc}</p>
+
+      {/* Learn more — navigates to app */}
+      <button
+        onClick={() => onGetStarted()}
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 5,
+          marginTop: 16, padding: "0", background: "none", border: "none",
+          fontSize: 12.5, color, fontWeight: 700, cursor: "pointer",
+          fontFamily: "'Inter', sans-serif",
+          transition: "gap 0.2s ease",
+        }}
+        onMouseEnter={e => { e.currentTarget.style.gap = "9px"; }}
+        onMouseLeave={e => { e.currentTarget.style.gap = "5px"; }}
+      >
+        Learn more
+        <ChevronRight size={14} style={{
+          transition: "transform 0.25s ease",
+          transform: hovered ? "translateX(3px)" : "translateX(0)",
+        }} />
+      </button>
+    </div>
+  );
+}
+
+function FeatureGrid({ onGetStarted }) {
+  return (
+    <div className="features-grid">
+      {FEATURES.map((feature, i) => (
+        <FeatureCard key={feature.title} feature={feature} index={i} onGetStarted={onGetStarted} />
+      ))}
+    </div>
+  );
+}
+
 export default function LandingPage({ onGetStarted, theme, toggleTheme }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -396,7 +518,7 @@ export default function LandingPage({ onGetStarted, theme, toggleTheme }) {
       {/* ── Energy Flow Visual ───────────────────────────────── */}
       <section style={{ padding: "40px 5% 20px", display: "flex", justifyContent: "center" }}>
         <div style={{ maxWidth: 620, width: "100%", animation: "float 6s ease-in-out infinite" }}>
-          <EnergyFlowSVG />
+          <EnergyFlowSVG theme={theme} />
         </div>
       </section>
 
@@ -432,40 +554,7 @@ export default function LandingPage({ onGetStarted, theme, toggleTheme }) {
             </p>
           </div>
 
-          <div className="features-grid">
-            {FEATURES.map(({ icon: Icon, color, title, desc }, i) => (
-              <div
-                key={title}
-                className="feature-card reveal"
-                data-delay={i * 80}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = `${color}40`;
-                  e.currentTarget.style.boxShadow = `0 16px 48px ${color}14`;
-                  e.currentTarget.style.transform = "translateY(-6px)";
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = "var(--feat-card-border)";
-                  e.currentTarget.style.boxShadow = "none";
-                  e.currentTarget.style.transform = "translateY(0)";
-                }}
-              >
-                <div className="feature-card-icon" style={{
-                  background: `${color}12`,
-                  border: `1px solid ${color}25`,
-                }}>
-                  <Icon size={22} color={color} />
-                </div>
-                <h3 className="feature-card-title">{title}</h3>
-                <p className="feature-card-desc">{desc}</p>
-                <div style={{
-                  display: "inline-flex", alignItems: "center", gap: 4,
-                  marginTop: 16, fontSize: 12, color, fontWeight: 600, cursor: "pointer",
-                }}>
-                  Learn more <ChevronRight size={13} />
-                </div>
-              </div>
-            ))}
-          </div>
+          <FeatureGrid onGetStarted={onGetStarted} />
         </div>
       </section>
 
@@ -496,8 +585,10 @@ export default function LandingPage({ onGetStarted, theme, toggleTheme }) {
                 }}>
                   {num}
                 </div>
-                <h3 className="step-title">{title}</h3>
-                <p className="step-desc">{desc}</p>
+                <div>
+                  <h3 className="step-title">{title}</h3>
+                  <p className="step-desc">{desc}</p>
+                </div>
               </div>
             ))}
           </div>
