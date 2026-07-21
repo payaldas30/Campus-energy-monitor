@@ -14,7 +14,7 @@ import {
 } from "./api";
 import { SignIn, SignUp } from "./AuthPages";
 import AnalyticsTab from "./AnalyticsTab";
-import AlertsTab from "./AlertsTab";
+import AlertsDrawer from "./AlertsDrawer";
 import AboutTab from "./AboutTab";
 import LandingPage from "./LandingPage";
 
@@ -174,14 +174,13 @@ function CustomTooltip({ active, payload, label }) {
 const NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: BarChart2 },
   { id: "analytics", label: "Analytics", icon: TrendingUp },
-  { id: "alerts",    label: "Alerts",    icon: AlertTriangle },
   { id: "about",     label: "About",     icon: Info },
 ];
 
 /* ══════════════════════════════════════════════════════════════
    MOBILE DRAWER
 ══════════════════════════════════════════════════════════════ */
-function MobileDrawer({ open, onClose, activeNav, setActiveNav, user, theme, toggleTheme, onLogout }) {
+function MobileDrawer({ open, onClose, activeNav, setActiveNav, user, theme, toggleTheme, onLogout, onOpenAlerts, anomalyCount = 0 }) {
   const initials = user?.name
     ? user.name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)
     : "U";
@@ -229,6 +228,26 @@ function MobileDrawer({ open, onClose, activeNav, setActiveNav, user, theme, tog
             {label}
           </button>
         ))}
+
+        {/* Alerts drawer trigger in mobile nav */}
+        <button
+          className="mobile-nav-item"
+          onClick={() => { onClose(); onOpenAlerts(); }}
+          style={{ position:"relative" }}
+        >
+          <Bell size={16} />
+          Alerts
+          {anomalyCount > 0 && (
+            <span style={{
+              marginLeft:"auto",
+              minWidth:18, height:18, borderRadius:99,
+              background:"#FF6B6B", color:"#fff",
+              fontSize:10, fontWeight:700,
+              display:"flex", alignItems:"center", justifyContent:"center",
+              padding:"0 4px",
+            }}>{anomalyCount > 99 ? "99+" : anomalyCount}</span>
+          )}
+        </button>
 
         <div style={{ flex: 1 }} />
 
@@ -284,6 +303,7 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
   const [error, setError]       = useState(null);
   const [activeNav, setActiveNav] = useState("dashboard");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [alertsOpen, setAlertsOpen] = useState(false);
 
   const zoneIdRef = useRef(null);
   zoneIdRef.current = zoneId;
@@ -394,6 +414,8 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
         theme={theme}
         toggleTheme={toggleTheme}
         onLogout={onLogout}
+        onOpenAlerts={() => setAlertsOpen(true)}
+        anomalyCount={summary?.anomaly_count ?? 0}
       />
 
       {/* ── Sticky Header ─────────────────────────────────── */}
@@ -482,7 +504,7 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
           <button
             className="notif-btn"
             aria-label="Notifications"
-            onClick={() => setActiveNav("alerts")}
+            onClick={() => setAlertsOpen(true)}
             style={{
               animation: (summary?.anomaly_count ?? 0) > 0 ? "shake 5s ease infinite" : "none"
             }}
@@ -534,21 +556,14 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
           </>
         )}
 
-        {/* ── Alerts tab ─────────────────────────────── */}
-        {activeNav === "alerts" && (
-          <>
-            <div style={{ marginBottom:20 }}>
-              <h2 style={{
-                fontFamily:"'Space Grotesk',sans-serif", fontSize: isMobile ? 18 : 22,
-                fontWeight:700, color:"var(--text-primary)", margin:"0 0 4px",
-              }}>Alerts</h2>
-              <p style={{ fontSize:13, color:"var(--text-muted)" }}>
-                Individual anomaly events — prioritised and actionable.
-              </p>
-            </div>
-            <AlertsTab isMobile={isMobile} />
-          </>
-        )}
+        {/* ── Alerts tab removed — now a side drawer ──── */}
+
+        {/* ── AlertsDrawer (slide-in from right) ────────── */}
+        <AlertsDrawer
+          open={alertsOpen}
+          onClose={() => setAlertsOpen(false)}
+          anomalyCount={summary?.anomaly_count ?? 0}
+        />
 
         {/* ── About tab ──────────────────────────────── */}
         {activeNav === "about" && (

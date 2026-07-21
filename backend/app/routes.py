@@ -48,6 +48,11 @@ def register(app):
                 "expected_kw": round(b["mean"], 2) if b else None,
                 "expected_upper": round(b["mean"] + b["std"], 2) if b else None,
                 "expected_lower": round(max(b["mean"] - b["std"], 0), 2) if b else None,
+                # Recharts range-area: [lower, upper] array
+                "sigma_band": [
+                    round(max(b["mean"] - b["std"], 0), 2),
+                    round(b["mean"] + b["std"], 2),
+                ] if b else None,
             })
 
         # ── 2. Load curve by hour-of-day ──────────────────────────────

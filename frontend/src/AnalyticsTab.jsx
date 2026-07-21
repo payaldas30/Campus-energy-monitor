@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie, Legend,
@@ -148,10 +148,11 @@ function PieLabel({ cx, cy, midAngle, innerRadius, outerRadius, name, pct }) {
 /* ── Heatmap ────────────────────────────────────────────────── */
 function Heatmap({ data, zones, isMobile }) {
   const [tooltip, setTooltip] = useState(null);
+  const containerRef = useRef(null);
   const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
-  // Build a 7x24 grid from baseline_actual — group by day-of-week and hour
+  // Build a 7×24 grid from baseline_actual — group by day-of-week and hour
   const grid = useMemo(() => {
     if (!data?.baseline_actual?.length) return null;
     const buckets = {};
@@ -187,60 +188,96 @@ function Heatmap({ data, zones, isMobile }) {
     return `rgba(255,107,107,${0.7 + ratio * 0.3})`;
   };
 
-  const cellW = isMobile ? 10 : 16;
-  const cellH = isMobile ? 14 : 22;
+  const LABEL_W = isMobile ? 26 : 34; // px reserved for day-name label
+  const CELL_H  = isMobile ? 16 : 22; // row height in px
+  const GAP     = 2;                  // gap between cells in px
 
   return (
-    <div style={{ position: "relative" }}>
-      {/* Hour labels */}
-      <div style={{ display: "flex", marginLeft: isMobile ? 28 : 36, marginBottom: 4, gap: 3 }}>
-        {HOURS.filter(h => h % (isMobile ? 6 : 4) === 0).map(h => (
+    <div ref={containerRef} style={{ width: "100%", overflow: "hidden" }}>
+      {/* Hour-label row — proportionally spaced with CSS grid */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: `${LABEL_W}px repeat(24, 1fr)`,
+        gap: GAP,
+        marginBottom: GAP,
+      }}>
+        {/* empty corner */}
+        <div />
+        {HOURS.map(h => (
           <div key={h} style={{
-            fontSize: 9, color: "var(--text-muted)", width: cellW * (isMobile ? 6 : 4),
+            fontSize: 8,
+            color: h % (isMobile ? 6 : 4) === 0 ? "var(--text-secondary)" : "transparent",
             textAlign: "center",
-          }}>{fmtHour(h)}</div>
-        ))}
-      </div>
-
-      {/* Grid with day labels */}
-      <div>
-        {DAYS.map((day, di) => (
-          <div key={day} style={{ display: "flex", alignItems: "center", gap: 3, marginBottom: 3 }}>
-            <div style={{ width: isMobile ? 24 : 32, fontSize: 9, color: "var(--text-muted)", textAlign: "right", flexShrink: 0 }}>
-              {day}
-            </div>
-            {HOURS.map(h => {
-              const cell = grid.cells.find(c => c.day === day && c.hour === h);
-              const val = cell?.avg || 0;
-              return (
-                <div
-                  key={h}
-                  className="heatmap-cell"
-                  style={{
-                    width: cellW, height: cellH,
-                    background: getColor(val, grid.maxVal),
-                    border: "1px solid rgba(255,255,255,0.04)",
-                  }}
-                  onMouseEnter={e => setTooltip({ val, day, hour: h, x: e.clientX, y: e.clientY })}
-                  onMouseLeave={() => setTooltip(null)}
-                />
-              );
-            })}
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+            userSelect: "none",
+          }}>
+            {fmtHour(h)}
           </div>
         ))}
       </div>
 
-      {/* Tooltip */}
+      {/* Data rows — each day is a CSS-grid row filling 100% width */}
+      {DAYS.map((day, di) => (
+        <div
+          key={day}
+          style={{
+            display: "grid",
+            gridTemplateColumns: `${LABEL_W}px repeat(24, 1fr)`,
+            gap: GAP,
+            marginBottom: GAP,
+          }}
+        >
+          {/* Day label */}
+          <div style={{
+            fontSize: 9,
+            color: "var(--text-secondary)",
+            textAlign: "right",
+            paddingRight: 4,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            fontWeight: 500,
+          }}>
+            {day}
+          </div>
+
+          {/* 24 hour cells — stretch to fill available space */}
+          {HOURS.map(h => {
+            const cell = grid.cells.find(c => c.day === day && c.hour === h);
+            const val  = cell?.avg || 0;
+            return (
+              <div
+                key={h}
+                className="heatmap-cell"
+                style={{
+                  height: CELL_H,
+                  borderRadius: 3,
+                  background: getColor(val, grid.maxVal),
+                  border: "1px solid rgba(128,128,128,0.08)",
+                  cursor: "default",
+                  minWidth: 0,
+                }}
+                onMouseEnter={e => setTooltip({ val, day, hour: h, x: e.clientX, y: e.clientY })}
+                onMouseLeave={() => setTooltip(null)}
+              />
+            );
+          })}
+        </div>
+      ))}
+
+      {/* Floating tooltip */}
       {tooltip && (
         <div style={{
           position: "fixed",
-          left: tooltip.x + 10, top: tooltip.y - 40,
-          background: "var(--tooltip-bg)", border: "1px solid var(--border)",
-          borderRadius: 8, padding: "6px 12px", fontSize: 11.5,
-          pointerEvents: "none", zIndex: 999,
+          left: tooltip.x + 12, top: tooltip.y - 48,
+          background: "var(--tooltip-bg)",
+          border: "1px solid var(--border)",
+          borderRadius: 8, padding: "7px 12px", fontSize: 11.5,
+          pointerEvents: "none", zIndex: 9999,
           boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
         }}>
-          <strong style={{ color: "var(--text-primary)" }}>{tooltip.day} {fmtHour(tooltip.hour)}</strong>
+          <strong style={{ color: "var(--text-primary)" }}>{tooltip.day} · {fmtHour(tooltip.hour)}</strong>
           <br />
           <span style={{ color: "#39D98A", fontFamily: "'IBM Plex Mono',monospace" }}>
             {tooltip.val.toFixed(1)} kW avg
@@ -249,13 +286,16 @@ function Heatmap({ data, zones, isMobile }) {
       )}
 
       {/* Legend */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
         <span style={{ fontSize: 10, color: "var(--text-muted)" }}>Low</span>
-        {["rgba(57,217,138,0.3)", "rgba(240,180,41,0.5)", "rgba(255,107,107,0.6)", "rgba(255,107,107,0.9)"].map((c, i) => (
-          <div key={i} style={{ width: 18, height: 12, borderRadius: 3, background: c, border: "1px solid rgba(255,255,255,0.06)" }} />
+        {["rgba(57,217,138,0.35)", "rgba(240,180,41,0.55)", "rgba(255,107,107,0.6)", "rgba(255,107,107,0.92)"].map((c, i) => (
+          <div key={i} style={{
+            width: 20, height: 12, borderRadius: 3,
+            background: c, border: "1px solid rgba(128,128,128,0.12)",
+          }} />
         ))}
         <span style={{ fontSize: 10, color: "var(--text-muted)" }}>High</span>
-        <span style={{ marginLeft: "auto", fontSize: 10, color: "var(--text-muted)" }}>Avg kW per hour/day</span>
+        <span style={{ marginLeft: "auto", fontSize: 10, color: "var(--text-muted)" }}>Avg kW per hour / day</span>
       </div>
     </div>
   );
@@ -426,50 +466,121 @@ export default function AnalyticsTab({ isMobile }) {
 
         {/* 1. Baseline vs Actual */}
         <Section title="Baseline vs. Actual" subtitle="Shaded band = expected ± 1σ · Line = real usage" icon={TrendingUp} accent="#39D98A">
-          {loading ? <Sk h={chartH} /> : (
+          {loading ? <Sk h={chartH} /> : (() => {
+            // Recharts stacked-area trick: lower fills transparent 0→lower, then band_width fills lower→upper
+            const bandData = (data?.baseline_actual || []).map(row => ({
+              ...row,
+              sigma_lower: row.expected_lower ?? null,
+              sigma_width: (row.expected_upper != null && row.expected_lower != null)
+                ? Math.max(row.expected_upper - row.expected_lower, 0)
+                : null,
+            }));
+            return (
             <ResponsiveContainer width="100%" height={chartH}>
-              <ComposedChart data={data?.baseline_actual || []} margin={{ top:5, right:8, left: isMobile ? -20 : -10, bottom:0 }}>
+              <ComposedChart
+                data={bandData}
+                margin={{ top:5, right:8, left: isMobile ? -20 : -10, bottom:0 }}
+              >
                 <defs>
-                  <linearGradient id="baseGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#39D98A" stopOpacity={0.18} />
-                    <stop offset="95%" stopColor="#39D98A" stopOpacity={0} />
+                  <linearGradient id="sigmaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%"  stopColor="#39D98A" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#39D98A" stopOpacity={0.08} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke={gridColor} vertical={false} strokeDasharray="3 3" />
-                <XAxis dataKey="ts" tickFormatter={v => fmtTs(v)}
-                  tick={{ fill:axisColor, fontSize:9 }} tickLine={false}
+                <XAxis
+                  dataKey="ts"
+                  tickFormatter={v => fmtTs(v)}
+                  tick={{ fill:axisColor, fontSize:9 }}
+                  tickLine={false}
                   axisLine={{ stroke:axisLineColor }}
-                  interval={Math.max(Math.floor((data?.baseline_actual?.length || 1) / (isMobile ? 4 : 6)), 0)} />
-                <YAxis tick={{ fill:axisColor, fontSize:10 }} tickLine={false}
-                  axisLine={{ stroke:axisLineColor }} unit=" kW" width={isMobile ? 44 : 52} />
+                  interval={Math.max(Math.floor((bandData.length || 1) / (isMobile ? 4 : 6)), 0)}
+                />
+                <YAxis
+                  tick={{ fill:axisColor, fontSize:10 }}
+                  tickLine={false}
+                  axisLine={{ stroke:axisLineColor }}
+                  unit=" kW"
+                  width={isMobile ? 44 : 52}
+                />
                 <Tooltip content={<ChartTooltip />} />
-                <Area type="monotone" dataKey="expected_upper" stroke="none"
-                  fill="url(#baseGrad)" name="Expected upper" legendType="none" />
-                <Area type="monotone" dataKey="expected_lower" stroke="none"
-                  fill="var(--bg-panel)" name="Expected lower" legendType="none" />
-                <Line type="monotone" dataKey="expected_kw" stroke="#39D98A"
-                  strokeWidth={1.5} strokeDasharray="5 3" dot={false} name="Expected (baseline)" />
-                <Line type="monotone" dataKey="kw" stroke="#58A6FF"
-                  strokeWidth={2} dot={false} name="Actual (kW)" />
+
+                {/* ── ±1σ band via stacked Areas ── */}
+                {/* Layer 1: transparent base from 0 → sigma_lower */}
+                <Area
+                  type="monotone"
+                  dataKey="sigma_lower"
+                  stackId="sigma"
+                  fill="transparent"
+                  stroke="none"
+                  dot={false}
+                  activeDot={false}
+                  legendType="none"
+                  connectNulls
+                />
+                {/* Layer 2: coloured band from sigma_lower → sigma_upper */}
+                <Area
+                  type="monotone"
+                  dataKey="sigma_width"
+                  stackId="sigma"
+                  fill="url(#sigmaGrad)"
+                  stroke="#39D98A"
+                  strokeWidth={1}
+                  strokeOpacity={0.6}
+                  strokeDasharray="5 4"
+                  dot={false}
+                  activeDot={false}
+                  name="±1σ band"
+                  legendType="none"
+                  connectNulls
+                />
+
+                {/* Expected baseline centre line */}
+                <Line
+                  type="monotone"
+                  dataKey="expected_kw"
+                  stroke="#39D98A"
+                  strokeWidth={2}
+                  strokeDasharray="6 3"
+                  dot={false}
+                  name="Expected baseline"
+                />
+
+                {/* Actual usage */}
+                <Line
+                  type="monotone"
+                  dataKey="kw"
+                  stroke="#58A6FF"
+                  strokeWidth={2.5}
+                  dot={false}
+                  name="Actual usage (kW)"
+                />
               </ComposedChart>
             </ResponsiveContainer>
-          )}
-          <div style={{ display:"flex", gap:16, marginTop:10, flexWrap:"wrap" }}>
+            );
+          })()}
+          <div style={{ display:"flex", gap:16, marginTop:12, flexWrap:"wrap", alignItems:"center" }}>
             {[
-              { color:"#58A6FF", label:"Actual usage", dash:false },
-              { color:"#39D98A", label:"Expected baseline", dash:true },
-              { color:"rgba(57,217,138,0.2)", label:"±1σ band", dash:false, isArea:true },
+              { color:"#58A6FF", label:"Actual usage", dash:false, isLine:true },
+              { color:"#39D98A", label:"Expected baseline", dash:true, isLine:true },
+              { color:"rgba(57,217,138,0.30)", label:"±1σ band", isArea:true },
             ].map((l, i) => (
-              <div key={i} style={{ display:"flex", alignItems:"center", gap:6, fontSize:11, color:"var(--text-secondary)" }}>
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:6, fontSize:11.5, color:"var(--text-secondary)" }}>
                 {l.isArea
-                  ? <span style={{ width:20, height:8, borderRadius:3, background:l.color, display:"inline-block" }} />
-                  : <svg width={20} height={2}>
-                      <line x1="0" y1="1" x2="20" y2="1"
-                        stroke={l.color} strokeWidth={l.dash ? 1.5 : 2}
-                        strokeDasharray={l.dash ? "5 3" : undefined} />
+                  ? <span style={{
+                      width:24, height:10, borderRadius:3,
+                      background:l.color,
+                      border:"1.5px dashed rgba(57,217,138,0.7)",
+                      display:"inline-block",
+                    }} />
+                  : <svg width={24} height={3}>
+                      <line x1="0" y1="1.5" x2="24" y2="1.5"
+                        stroke={l.color}
+                        strokeWidth={l.dash ? 1.5 : 2.5}
+                        strokeDasharray={l.dash ? "6 3" : undefined} />
                     </svg>
                 }
-                {l.label}
+                <span>{l.label}</span>
               </div>
             ))}
           </div>
