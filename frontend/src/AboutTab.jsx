@@ -63,12 +63,12 @@ function SmartGridSVG() {
     <svg viewBox="0 0 500 340" style={{ width: "100%", maxWidth: 480 }}>
       <defs>
         <linearGradient id="sgGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#39D98A" stopOpacity="0.8" />
-          <stop offset="100%" stopColor="#22D3EE" stopOpacity="0.8" />
+          <stop offset="0%" stopColor="var(--accent-green)" stopOpacity="0.8" />
+          <stop offset="100%" stopColor="var(--accent-cyan)" stopOpacity="0.8" />
         </linearGradient>
         <linearGradient id="sgGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#58A6FF" stopOpacity="0.8" />
-          <stop offset="100%" stopColor="#A78BFA" stopOpacity="0.8" />
+          <stop offset="0%" stopColor="var(--accent-blue)" stopOpacity="0.8" />
+          <stop offset="100%" stopColor="var(--accent-purple)" stopOpacity="0.8" />
         </linearGradient>
         <filter id="sgGlow">
           <feGaussianBlur stdDeviation="2" result="coloredBlur" />
@@ -82,44 +82,44 @@ function SmartGridSVG() {
       {/* Background grid */}
       {[0,1,2,3].map(i => (
         <line key={`sg-h${i}`} x1="0" y1={85*i} x2="500" y2={85*i}
-          stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
+          stroke="var(--border)" strokeWidth="1"/>
       ))}
       {[0,1,2,3,4].map(i => (
         <line key={`sg-v${i}`} x1={125*i} y1="0" x2={125*i} y2="340"
-          stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
+          stroke="var(--border)" strokeWidth="1"/>
       ))}
 
       {/* Central brain ring */}
-      <circle cx="250" cy="170" r="55" fill="rgba(57,217,138,0.05)" stroke="url(#sgGrad1)" strokeWidth="1.5" />
-      <circle cx="250" cy="170" r="38" fill="rgba(57,217,138,0.1)" stroke="url(#sgGrad1)" strokeWidth="1" />
-      <circle cx="250" cy="170" r="20" fill="rgba(57,217,138,0.25)" />
-      <circle cx="250" cy="170" r="6" fill="#39D98A" style={{ filter: "url(#sgGlow)" }} />
-      <text x="250" y="200" textAnchor="middle" fontSize="9" fill="#39D98A" fontWeight="700" letterSpacing="1">AI CORE</text>
+      <circle cx="250" cy="170" r="55" fill="var(--accent-green)" fillOpacity="0.05" stroke="url(#sgGrad1)" strokeWidth="1.5" />
+      <circle cx="250" cy="170" r="38" fill="var(--accent-green)" fillOpacity="0.1" stroke="url(#sgGrad1)" strokeWidth="1" />
+      <circle cx="250" cy="170" r="20" fill="var(--accent-green)" fillOpacity="0.25" />
+      <circle cx="250" cy="170" r="6" fill="var(--accent-green)" style={{ filter: "url(#sgGlow)" }} />
+      <text x="250" y="200" textAnchor="middle" fontSize="9" fill="var(--accent-green)" fontWeight="700" letterSpacing="1">AI CORE</text>
 
       {/* Satellite nodes */}
       {[
-        { x: 80,  y: 60,  color: "#39D98A", label: "Admin" },
-        { x: 420, y: 60,  color: "#58A6FF", label: "Labs" },
-        { x: 60,  y: 280, color: "#A78BFA", label: "Hostel" },
-        { x: 440, y: 280, color: "#22D3EE", label: "Library" },
-        { x: 250, y: 30,  color: "#F0B429", label: "Solar" },
-        { x: 480, y: 170, color: "#FF6B6B", label: "Grid" },
+        { x: 80,  y: 60,  color: "var(--accent-green)",  label: "Admin" },
+        { x: 420, y: 60,  color: "var(--accent-blue)",   label: "Labs" },
+        { x: 60,  y: 280, color: "var(--accent-purple)", label: "Hostel" },
+        { x: 440, y: 280, color: "var(--accent-cyan)",   label: "Library" },
+        { x: 250, y: 30,  color: "var(--accent-yellow)", label: "Solar" },
+        { x: 480, y: 170, color: "var(--accent-red)",    label: "Grid" },
       ].map(({ x, y, color, label }) => (
         <g key={label}>
-          <line x1={x} y1={y} x2="250" y2="170" stroke={color} strokeWidth="1"
-            strokeDasharray="4,4" strokeOpacity="0.5"
+          <line x1={x} y1={y} x2="250" y2="170" stroke={color} strokeWidth="1.2"
+            strokeDasharray="4,4" strokeOpacity="0.6"
             style={{ animation: `energy-flow 3s linear infinite` }}/>
-          <circle cx={x} cy={y} r="22" fill={`${color}12`} stroke={`${color}45`} strokeWidth="1.5" />
-          <circle cx={x} cy={y} r="8" fill={`${color}30`} />
+          <circle cx={x} cy={y} r="22" fill={color} fillOpacity="0.07" stroke={color} strokeOpacity="0.27" strokeWidth="1.5" />
+          <circle cx={x} cy={y} r="8" fill={color} fillOpacity="0.18" />
           <circle cx={x} cy={y} r="3" fill={color} />
           <text x={x} y={y+34} textAnchor="middle" fontSize="8" fill={color} fontWeight="600" letterSpacing="0.5">{label}</text>
         </g>
       ))}
 
       {/* Live badge */}
-      <rect x="30" y="310" width="100" height="20" rx="10" fill="rgba(57,217,138,0.1)" stroke="rgba(57,217,138,0.3)" strokeWidth="1"/>
-      <circle cx="44" cy="320" r="3.5" fill="#39D98A" style={{ animation: "pulse-dot 1.5s ease infinite" }}/>
-      <text x="53" y="324" fontSize="8" fill="#39D98A" fontWeight="600">LIVE MONITORING</text>
+      <rect x="30" y="310" width="100" height="20" rx="10" fill="var(--accent-green)" fillOpacity="0.1" stroke="var(--accent-green)" strokeOpacity="0.3" strokeWidth="1"/>
+      <circle cx="44" cy="320" r="3.5" fill="var(--accent-green)" style={{ animation: "pulse-dot 1.5s ease infinite" }}/>
+      <text x="53" y="324" fontSize="8" fill="var(--accent-green)" fontWeight="600">LIVE MONITORING</text>
     </svg>
   );
 }
@@ -251,89 +251,6 @@ export default function AboutTab({ isMobile }) {
               <p style={{ fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.6 }}>{desc}</p>
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* ── Tech stack ────────────────────────────────────── */}
-      <div style={{
-        background: "var(--bg-card)",
-        border: "1px solid var(--border)",
-        borderRadius: 18, padding: isMobile ? "20px 18px" : "24px 26px",
-        marginBottom: 20,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
-          <h3 style={{
-            fontFamily: "'Space Grotesk', sans-serif",
-            fontSize: 16, fontWeight: 900, margin: 0, letterSpacing: -0.3,
-          }}><span className="anim-heading">Technology Stack</span></h3>
-          <span style={{
-            marginLeft: "auto", fontSize: 10.5, color: "var(--text-muted)",
-            background: "var(--bg-rec)", padding: "2px 10px", borderRadius: 99,
-            border: "1px solid var(--border)",
-          }}>MIT License</span>
-        </div>
-
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)",
-          gap: 10,
-        }}>
-          {TECH.map(({ label, color, desc }) => (
-            <div key={label}
-              style={{
-                padding: "14px 12px",
-                background: hoveredTech === label ? `${color}08` : "var(--bg-rec)",
-                border: `1px solid ${hoveredTech === label ? color + "35" : "var(--border)"}`,
-                borderRadius: 10,
-                cursor: "default",
-                transition: "all 0.2s ease",
-                transform: hoveredTech === label ? "translateY(-2px)" : "none",
-              }}
-              onMouseEnter={() => setHoveredTech(label)}
-              onMouseLeave={() => setHoveredTech(null)}
-            >
-              <div style={{
-                fontSize: 12.5, fontWeight: 700, color: hoveredTech === label ? color : "var(--text-primary)",
-                marginBottom: 3, transition: "color 0.2s",
-              }}>{label}</div>
-              <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.4 }}>{desc}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Architecture note ──────────────────────────────── */}
-      <div style={{
-        padding: isMobile ? "18px 18px" : "22px 24px",
-        background: "linear-gradient(135deg, rgba(167,139,250,0.06) 0%, rgba(88,166,255,0.04) 100%)",
-        border: "1px solid rgba(167,139,250,0.2)",
-        borderRadius: 14,
-        display: "flex", gap: 18, alignItems: "flex-start", flexWrap: "wrap",
-        marginBottom: 20,
-      }}>
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <h4 style={{
-            fontFamily: "'Space Grotesk', sans-serif",
-            fontSize: 14, fontWeight: 700, color: "var(--text-primary)", marginBottom: 7,
-          }}>Architecture Overview</h4>
-          <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.7, maxWidth: 640 }}>
-            EnergyIQ runs a <strong style={{ color: "#A78BFA" }}>FastAPI backend</strong> that simulates a live campus grid —
-            seeding historical data into SQLite and continuously broadcasting new 15-minute readings
-            over a <strong style={{ color: "#58A6FF" }}>WebSocket connection</strong>. The{" "}
-            <strong style={{ color: "#39D98A" }}>React frontend</strong> subscribes to these live feeds, renders
-            interactive charts via Recharts, and applies statistical anomaly detection in Python
-            for real-time alerts. The entire stack runs locally with zero cloud dependency.
-          </p>
-          <div style={{ display: "flex", gap: 7, marginTop: 12, flexWrap: "wrap" }}>
-            {["API · localhost:8000", "UI · localhost:5173", "WS · /ws/live"].map(label => (
-              <span key={label} style={{
-                fontFamily: "'IBM Plex Mono', monospace",
-                fontSize: 10.5, color: "#A78BFA",
-                background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.2)",
-                borderRadius: 6, padding: "3px 9px",
-              }}>{label}</span>
-            ))}
-          </div>
         </div>
       </div>
 
