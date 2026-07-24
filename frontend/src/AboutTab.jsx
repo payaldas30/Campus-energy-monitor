@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
   Activity, TrendingUp, Shield, Leaf, BarChart2, Bell,
-  Server, Code2, Award, Heart, ChevronRight, Zap,
 } from "lucide-react";
 
 /* ── Feature data ───────────────────────────────────────────── */
@@ -228,40 +227,26 @@ export default function AboutTab({ isMobile }) {
       {/* ── Feature cards grid ─────────────────────────────── */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-          <div style={{
-            width: 26, height: 26, borderRadius: 7,
-            background: "rgba(57,217,138,0.1)", border: "1px solid rgba(57,217,138,0.22)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <Award size={12} color="#39D98A" />
-          </div>
           <h3 style={{
             fontFamily: "'Space Grotesk', sans-serif",
-            fontSize: 14.5, fontWeight: 700, color: "var(--text-panel-title)", margin: 0,
-          }}>Core Capabilities</h3>
+            fontSize: 16, fontWeight: 900, margin: 0, letterSpacing: -0.3,
+          }}><span className="anim-heading">Core Capabilities</span></h3>
         </div>
         <div style={{
           display: "grid",
           gridTemplateColumns: cols3,
           gap: 12,
         }}>
-          {FEATURES.map(({ icon: Icon, color, bg, title, desc }, i) => (
+          {FEATURES.map(({ color, bg, title, desc }, i) => (
             <div
               key={title}
               className="about-feature-card"
-              style={{ animationDelay: `${i * 50}ms` }}
+              style={{ animationDelay: `${i * 50}ms`, borderTop: `3px solid ${color}` }}
             >
-              <div style={{
-                width: 42, height: 42, borderRadius: 11,
-                background: bg, border: `1px solid ${color}22`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                marginBottom: 14,
-              }}>
-                <Icon size={18} color={color} />
-              </div>
               <h4 style={{
                 fontFamily: "'Space Grotesk', sans-serif",
-                fontSize: 13.5, fontWeight: 700, color: "var(--text-primary)", marginBottom: 7,
+                fontSize: 14.5, fontWeight: 700, color: "var(--text-primary)", marginBottom: 7,
+                marginTop: 8,
               }}>{title}</h4>
               <p style={{ fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.6 }}>{desc}</p>
             </div>
@@ -277,17 +262,10 @@ export default function AboutTab({ isMobile }) {
         marginBottom: 20,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
-          <div style={{
-            width: 26, height: 26, borderRadius: 7,
-            background: "rgba(88,166,255,0.1)", border: "1px solid rgba(88,166,255,0.22)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <Code2 size={12} color="#58A6FF" />
-          </div>
           <h3 style={{
             fontFamily: "'Space Grotesk', sans-serif",
-            fontSize: 14.5, fontWeight: 700, color: "var(--text-panel-title)", margin: 0,
-          }}>Technology Stack</h3>
+            fontSize: 16, fontWeight: 900, margin: 0, letterSpacing: -0.3,
+          }}><span className="anim-heading">Technology Stack</span></h3>
           <span style={{
             marginLeft: "auto", fontSize: 10.5, color: "var(--text-muted)",
             background: "var(--bg-rec)", padding: "2px 10px", borderRadius: 99,
@@ -333,13 +311,6 @@ export default function AboutTab({ isMobile }) {
         display: "flex", gap: 18, alignItems: "flex-start", flexWrap: "wrap",
         marginBottom: 20,
       }}>
-        <div style={{
-          width: 40, height: 40, borderRadius: 11, flexShrink: 0,
-          background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.28)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <Server size={18} color="#A78BFA" />
-        </div>
         <div style={{ flex: 1, minWidth: 200 }}>
           <h4 style={{
             fontFamily: "'Space Grotesk', sans-serif",

@@ -5,8 +5,7 @@ import {
   ReferenceLine, LineChart,
 } from "recharts";
 import {
-  TrendingUp, BarChart2, Clock, Calendar, Zap,
-  RefreshCw, ChevronDown, Layers, Sparkles, Grid,
+  RefreshCw, ChevronDown,
 } from "lucide-react";
 import { fetchAnalytics, fetchZones } from "./api";
 
@@ -53,23 +52,17 @@ function ChartTooltip({ active, payload, label, unit = "kW" }) {
 }
 
 /* ── section card ───────────────────────────────────────────── */
-function Section({ title, subtitle, icon: Icon, accent = "#39D98A", children, delay = 0 }) {
+function Section({ title, subtitle, accent = "#39D98A", children, delay = 0 }) {
   return (
     <div className="panel" style={{ animationDelay:`${delay}ms`, marginBottom:16 }}>
-      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:18, flexWrap:"wrap", gap:8 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{
-            width:32, height:32, borderRadius:9,
-            background:`${accent}15`, border:`1px solid ${accent}25`,
-            display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
-          }}>
-            <Icon size={15} color={accent} />
-          </div>
-          <div>
-            <h3 style={{ fontFamily:"'Space Grotesk',sans-serif", fontSize:14, fontWeight:600, margin:0, color:"var(--text-panel-title)" }}>{title}</h3>
-            {subtitle && <p style={{ fontSize:11.5, color:"var(--text-muted)", margin:"2px 0 0" }}>{subtitle}</p>}
-          </div>
-        </div>
+      <div style={{ marginBottom:18 }}>
+        <h3 style={{
+          fontFamily:"'Space Grotesk',sans-serif",
+          fontSize: 16, fontWeight: 800, margin: 0, letterSpacing: -0.3,
+        }}>
+          <span className="anim-heading-blue">{title}</span>
+        </h3>
+        {subtitle && <p style={{ fontSize:11.5, color:"var(--text-muted)", margin:"4px 0 0" }}>{subtitle}</p>}
       </div>
       {children}
     </div>
@@ -310,7 +303,6 @@ function AIInsights({ data, period }) {
     // Peak hour insight
     if (data.peak_hour != null) {
       results.push({
-        icon: "⚡",
         color: "#FF6B6B",
         title: `Peak demand at ${fmtHour(data.peak_hour)}`,
         desc: `Predicted peak of ${data.peak_kw} kW. Pre-cooling 30–45 min earlier can flatten this by ~12%.`,
@@ -323,7 +315,6 @@ function AIInsights({ data, period }) {
       const overBaseline = recent.filter(r => r.kw > (r.expected_kw || 0) * 1.1).length;
       if (overBaseline > 3) {
         results.push({
-          icon: "📈",
           color: "#F0B429",
           title: `${overBaseline} readings above baseline recently`,
           desc: "Sustained overrun detected. Check HVAC and lab equipment for scheduling opportunities.",
@@ -336,7 +327,6 @@ function AIInsights({ data, period }) {
       const top = [...data.zone_contribution].sort((a, b) => b.total_kwh - a.total_kwh)[0];
       if (top) {
         results.push({
-          icon: "🏛",
           color: "#A78BFA",
           title: `${top.name} is your biggest consumer`,
           desc: `Accounts for ${top.pct}% of campus load (${top.total_kwh.toLocaleString()} kWh). Focus efficiency efforts here first.`,
@@ -366,18 +356,14 @@ function AIInsights({ data, period }) {
       borderRadius: 16, padding: "20px 22px",
       marginBottom: 16,
     }}>
+      {/* Header — no icon box */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-        <div style={{
-          width: 30, height: 30, borderRadius: 9,
-          background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.25)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <Sparkles size={14} color="#A78BFA" />
-        </div>
         <h3 style={{
           fontFamily: "'Space Grotesk',sans-serif",
-          fontSize: 14, fontWeight: 600, margin: 0, color: "var(--text-panel-title)",
-        }}>AI Insights</h3>
+          fontSize: 15, fontWeight: 800, margin: 0, letterSpacing: -0.3,
+        }}>
+          <span className="anim-heading">AI Insights</span>
+        </h3>
         <span style={{
           fontSize: 10.5, color: "#A78BFA", background: "rgba(167,139,250,0.1)",
           border: "1px solid rgba(167,139,250,0.25)", borderRadius: 6,
@@ -393,12 +379,13 @@ function AIInsights({ data, period }) {
             padding: "12px 14px",
             background: `${ins.color}06`,
             border: `1px solid ${ins.color}20`,
+            borderLeft: `3px solid ${ins.color}`,
             borderRadius: 12,
             animation: `fadeInUp 0.4s ease ${i * 60}ms both`,
           }}>
-            <span style={{ fontSize: 20, flexShrink: 0, marginTop: 1 }}>{ins.icon}</span>
+            {/* No icon/emoji — colored left border provides visual identity */}
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: ins.color, marginBottom: 4 }}>{ins.title}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: ins.color, marginBottom: 4 }}>{ins.title}</div>
               <div style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.55 }}>{ins.desc}</div>
             </div>
           </div>
@@ -465,7 +452,7 @@ export default function AnalyticsTab({ isMobile }) {
       <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap:16, marginBottom:16 }}>
 
         {/* 1. Baseline vs Actual */}
-        <Section title="Baseline vs. Actual" subtitle="Shaded band = expected ± 1σ · Line = real usage" icon={TrendingUp} accent="#39D98A">
+        <Section title="Baseline vs. Actual" subtitle="Shaded band = expected ± 1σ · Line = real usage" accent="#39D98A">
           {loading ? <Sk h={chartH} /> : (() => {
             // Recharts stacked-area trick: lower fills transparent 0→lower, then band_width fills lower→upper
             const bandData = (data?.baseline_actual || []).map(row => ({
@@ -587,7 +574,7 @@ export default function AnalyticsTab({ isMobile }) {
         </Section>
 
         {/* 2. Zone Contribution Pie */}
-        <Section title="Zone Contribution" subtitle={`Share of total campus load · ${period}`} icon={Layers} accent="#A78BFA">
+        <Section title="Zone Contribution" subtitle={`Share of total campus load · ${period}`} accent="#A78BFA">
           {loading ? <Sk h={chartH} /> : (
             <>
               <ResponsiveContainer width="100%" height={isMobile ? 180 : 200}>
@@ -633,7 +620,7 @@ export default function AnalyticsTab({ isMobile }) {
       <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap:16, marginBottom:16 }}>
 
         {/* 3. Load Curve by Hour */}
-        <Section title="Load Curve by Hour of Day" subtitle="Avg consumption per hour — where peaks live" icon={Clock} accent="#F0B429" delay={80}>
+        <Section title="Load Curve by Hour of Day" subtitle="Avg consumption per hour — where peaks live" accent="#F0B429" delay={80}>
           <div style={{ display:"flex", gap:6, marginBottom:14, flexWrap:"wrap" }}>
             {zones.map(z => (
               <button key={z.id} onClick={() => toggleZone(z.id)} style={{
@@ -674,7 +661,7 @@ export default function AnalyticsTab({ isMobile }) {
         </Section>
 
         {/* 4. Weekday vs Weekend */}
-        <Section title="Weekday vs. Weekend" subtitle="Occupancy-driven load vs. always-on standby floor" icon={Calendar} accent="#22D3EE" delay={160}>
+        <Section title="Weekday vs. Weekend" subtitle="Occupancy-driven load vs. always-on standby floor" accent="#22D3EE" delay={160}>
           <div style={{ display:"flex", gap:6, marginBottom:14, flexWrap:"wrap" }}>
             {zones.map(z => (
               <button key={z.id} onClick={() => setZoneId(z.id === zoneId ? "all" : z.id)} style={{
@@ -726,12 +713,12 @@ export default function AnalyticsTab({ isMobile }) {
       </div>
 
       {/* ── Heatmap ── */}
-      <Section title="Consumption Heatmap" subtitle="Hour-of-day × day-of-week — spot hidden waste patterns" icon={Grid} accent="#22D3EE" delay={220}>
+      <Section title="Consumption Heatmap" subtitle="Hour-of-day × day-of-week — spot hidden waste patterns" accent="#22D3EE" delay={220}>
         {loading ? <Sk h={180} /> : <Heatmap data={data} zones={zones} isMobile={isMobile} />}
       </Section>
 
       {/* ── Row 3: Peak Forecast ── */}
-      <Section title="Peak Demand Forecast" subtitle="Predicted hourly campus-wide load — 7-day rolling average" icon={Zap} accent="#FF6B6B" delay={280}>
+      <Section title="Peak Demand Forecast" subtitle="Predicted hourly campus-wide load — 7-day rolling average" accent="#FF6B6B" delay={280}>
         {loading ? <Sk h={isMobile ? 160 : 200} /> : (
           <ResponsiveContainer width="100%" height={isMobile ? 160 : 200}>
             <ComposedChart data={data?.forecast_curve || []} margin={{ top:5, right:8, left: isMobile ? -20 : -10, bottom:0 }}>

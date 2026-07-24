@@ -1445,3 +1445,39 @@ body {
   .landing-cta-primary { width: 100%; justify-content: center; }
   .landing-cta-secondary { width: 100%; justify-content: center; }
 }
+
+/* ─── Global animated gradient heading ──────────────────────── */
+@keyframes gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.anim-heading {
+  background: linear-gradient(
+    270deg,
+    #39D98A, #22D3EE, #58A6FF, #A78BFA, #FF6B6B, #F0B429, #39D98A
+  );
+  background-size: 400% 400%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 6s ease infinite;
+  display: inline;
+  font-weight: 900 !important;
+  letter-spacing: -0.5px;
+}
+
+.anim-heading-blue {
+  background: linear-gradient(
+    270deg,
+    #58A6FF, #A78BFA, #22D3EE, #39D98A, #58A6FF
+  );
+  background-size: 400% 400%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 6s ease infinite;
+  display: inline;
+  font-weight: 900 !important;
+}

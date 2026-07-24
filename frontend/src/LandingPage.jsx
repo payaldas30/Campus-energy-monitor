@@ -1,9 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import {
-  Zap, ArrowRight, Activity, TrendingUp, Shield, Leaf,
-  BarChart2, Bell, ChevronRight, ChevronDown, Play, Sun, Moon,
-  CheckCircle, Star, ArrowUpRight, Menu, X, GitBranch, ExternalLink,
-} from "lucide-react";
+import { Sun, Moon } from "lucide-react";
 
 /* ── Scroll reveal hook ─────────────────────────────────────── */
 function useScrollReveal() {
@@ -185,45 +181,39 @@ function EnergyFlowSVG({ theme }) {
 /* ── Feature cards data ─────────────────────────────────────── */
 const FEATURES = [
   {
-    icon: Activity, color: "#39D98A",
+    num: "01", color: "#39D98A",
     title: "Real-Time Monitoring",
     desc: "Live WebSocket feeds push 15-minute interval data from every campus zone directly to your dashboard.",
-    detail: "Our WebSocket pipeline streams sub-meter readings every 15 minutes. You get instant visibility into zone-level consumption spikes, letting your team respond before small issues become big bills.",
     link: "dashboard",
   },
   {
-    icon: TrendingUp, color: "#58A6FF",
+    num: "02", color: "#58A6FF",
     title: "Peak Demand Forecasting",
     desc: "Rolling 7-day baseline models predict hourly demand peaks with statistical confidence intervals.",
-    detail: "Using a 7-day rolling average baseline, the system forecasts peak demand hours with ±5% accuracy. Confidence intervals let facility managers plan load-shedding or HVAC schedules in advance.",
     link: "analytics",
   },
   {
-    icon: Shield, color: "#A78BFA",
+    num: "03", color: "#A78BFA",
     title: "Anomaly Detection",
     desc: "Z-score analysis flags consumption spikes the moment they deviate beyond expected thresholds.",
-    detail: "Every reading is scored against its historical Z-score. Deviations beyond 2σ trigger automatic anomaly flags with zone, timestamp, and magnitude — so no abnormal draw goes unnoticed.",
     link: "alerts",
   },
   {
-    icon: Leaf, color: "#22D3EE",
+    num: "04", color: "#22D3EE",
     title: "Carbon Optimization",
     desc: "Smart intervention recommendations reduce your campus carbon footprint and slash utility costs.",
-    detail: "The recommendations engine converts kWh readings into CO₂ equivalents and suggests concrete actions — e.g., 'Shift AC peak in Lab A to off-peak hours to save 120 kg CO₂/month'.",
     link: "analytics",
   },
   {
-    icon: BarChart2, color: "#F0B429",
+    num: "05", color: "#F0B429",
     title: "Interactive Analytics",
     desc: "Heatmaps, load curves, weekday/weekend patterns — every angle of your energy story visualized.",
-    detail: "Drill into 48-hour history charts, weekday vs weekend overlays, and zonal heatmaps. Recharts-powered visuals update live so you always see the freshest data without a page refresh.",
     link: "analytics",
   },
   {
-    icon: Bell, color: "#FF6B6B",
+    num: "06", color: "#FF6B6B",
     title: "Smart Alert Workflow",
     desc: "Tiered alert system with severity scoring, status pipeline and direct action recommendations.",
-    detail: "Alerts are graded Low / Medium / High / Critical. Each alert moves through a status pipeline (Open → Investigating → Resolved) and includes a recommended action so your team always knows the next step.",
     link: "alerts",
   },
 ];
@@ -259,58 +249,49 @@ const TICKERS = [
   "Secure and scalable",
 ];
 
-/* ════════════════════════════════════════════════════════════
-   LANDING PAGE
-════════════════════════════════════════════════════════════ */
-/* ── Feature cards (no expand) ───────────────────────────────── */
+/* ── Feature card ───────────────────────────────────────────── */
 function FeatureCard({ feature, index, onGetStarted }) {
-  const [hovered, setHovered] = useState(false);
-  const { icon: Icon, color, title, desc } = feature;
+  const { num, color, title, desc } = feature;
 
   return (
     <div
       className="feature-card reveal"
       data-delay={index * 80}
       onMouseEnter={e => {
-        setHovered(true);
         e.currentTarget.style.borderColor = `${color}40`;
         e.currentTarget.style.boxShadow = `0 16px 48px ${color}14`;
         e.currentTarget.style.transform = "translateY(-6px)";
       }}
       onMouseLeave={e => {
-        setHovered(false);
         e.currentTarget.style.borderColor = "var(--feat-card-border)";
         e.currentTarget.style.boxShadow = "none";
         e.currentTarget.style.transform = "translateY(0)";
       }}
     >
-      <div className="feature-card-icon" style={{
-        background: `${color}12`,
-        border: `1px solid ${color}25`,
+      {/* Numbered badge — no icon, no emoji */}
+      <div style={{
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+        width: 40, height: 40, borderRadius: 12, marginBottom: 14,
+        background: `${color}12`, border: `1.5px solid ${color}35`,
+        fontFamily: "'IBM Plex Mono', monospace",
+        fontSize: 13, fontWeight: 800, color, letterSpacing: 0.5,
       }}>
-        <Icon size={22} color={color} />
+        {num}
       </div>
       <h3 className="feature-card-title">{title}</h3>
       <p className="feature-card-desc">{desc}</p>
 
-      {/* Learn more — navigates to app */}
       <button
         onClick={() => onGetStarted()}
         style={{
-          display: "inline-flex", alignItems: "center", gap: 5,
+          display: "inline-flex", alignItems: "center",
           marginTop: 16, padding: "0", background: "none", border: "none",
           fontSize: 12.5, color, fontWeight: 700, cursor: "pointer",
           fontFamily: "'Inter', sans-serif",
-          transition: "gap 0.2s ease",
+          letterSpacing: 0.2,
         }}
-        onMouseEnter={e => { e.currentTarget.style.gap = "9px"; }}
-        onMouseLeave={e => { e.currentTarget.style.gap = "5px"; }}
       >
         Learn more
-        <ChevronRight size={14} style={{
-          transition: "transform 0.25s ease",
-          transform: hovered ? "translateX(3px)" : "translateX(0)",
-        }} />
       </button>
     </div>
   );
@@ -326,6 +307,9 @@ function FeatureGrid({ onGetStarted }) {
   );
 }
 
+/* ════════════════════════════════════════════════════════════
+   LANDING PAGE
+════════════════════════════════════════════════════════════ */
 export default function LandingPage({ onGetStarted, theme, toggleTheme }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -342,32 +326,56 @@ export default function LandingPage({ onGetStarted, theme, toggleTheme }) {
     setMobileMenuOpen(false);
   };
 
+  /* Inject animated gradient keyframes once */
+  useEffect(() => {
+    const id = "animated-gradient-style";
+    if (document.getElementById(id)) return;
+    const style = document.createElement("style");
+    style.id = id;
+    style.textContent = `
+      @keyframes gradient-shift {
+        0%   { background-position: 0% 50%; }
+        50%  { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+      .animated-gradient-heading {
+        background: linear-gradient(
+          270deg,
+          #39D98A, #22D3EE, #58A6FF, #A78BFA, #FF6B6B, #F0B429, #39D98A
+        );
+        background-size: 400% 400%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: gradient-shift 5s ease infinite;
+        display: inline;
+      }
+    `;
+    document.head.appendChild(style);
+  }, []);
+
   return (
     <div className="landing-root">
+
       {/* ── Sticky Nav ──────────────────────────────────────── */}
       <nav className={`landing-nav ${scrolled ? "scrolled" : ""}`}>
-        {/* Logo */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{
-            width: 38, height: 38, borderRadius: 11,
-            background: "linear-gradient(135deg, #39D98A, #22D3EE)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 0 16px rgba(57,217,138,0.35)",
-          }}>
-            <Zap size={18} color="#080C10" fill="#080C10" />
-          </div>
+        {/* Logo — text only, no icon */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{
             fontFamily: "'Space Grotesk', sans-serif",
-            fontSize: 18, fontWeight: 700, color: "var(--text-primary)",
-          }}>Energy<span className="gradient-text" style={{ fontWeight: 500 }}>IQ</span></span>
+            fontSize: 22, fontWeight: 800, letterSpacing: -0.5,
+          }}>
+            <span className="animated-gradient-heading">Energy</span>
+            <span style={{ color: "var(--text-primary)" }}>IQ</span>
+          </span>
         </div>
 
         {/* Desktop nav links */}
         <div className="landing-nav-links">
           {[
-            { id: "features",      label: "Features" },
-            { id: "how-it-works",  label: "How It Works" },
-            { id: "stats",         label: "Results" },
+            { id: "features",     label: "Features" },
+            { id: "how-it-works", label: "How It Works" },
+            { id: "stats",        label: "Results" },
           ].map(({ id, label }) => (
             <button key={id} className="landing-nav-link" onClick={() => scrollTo(id)}>
               {label}
@@ -393,7 +401,7 @@ export default function LandingPage({ onGetStarted, theme, toggleTheme }) {
             onClick={onGetStarted}
             style={{
               display: "inline-flex", alignItems: "center", gap: 8,
-              padding: "9px 20px", borderRadius: 11,
+              padding: "9px 22px", borderRadius: 11,
               background: "linear-gradient(135deg, #39D98A, #22D3EE)",
               color: "#080C10", fontSize: 13.5, fontWeight: 700,
               border: "none", cursor: "pointer",
@@ -403,15 +411,21 @@ export default function LandingPage({ onGetStarted, theme, toggleTheme }) {
             onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(57,217,138,0.4)"; }}
             onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
           >
-            Sign In <ArrowRight size={14} />
+            Sign In
           </button>
-          {/* Mobile hamburger */}
+          {/* Mobile menu button */}
           <button
             onClick={() => setMobileMenuOpen(v => !v)}
             className="landing-mobile-btn"
             aria-label="Menu"
+            style={{
+              fontSize: 12, fontWeight: 700, background: "var(--toggle-bg)",
+              border: "1px solid var(--border)", borderRadius: 8, cursor: "pointer",
+              color: "var(--text-primary)", padding: "6px 10px",
+              fontFamily: "'Inter', sans-serif",
+            }}
           >
-            {mobileMenuOpen ? <X size={18} color="var(--text-primary)" /> : <Menu size={18} color="var(--text-primary)" />}
+            {mobileMenuOpen ? "Close" : "Menu"}
           </button>
         </div>
       </nav>
@@ -466,16 +480,15 @@ export default function LandingPage({ onGetStarted, theme, toggleTheme }) {
           animation: "float-reverse 12s ease-in-out infinite",
         }} />
 
-        {/* Badge */}
+        {/* Badge — plain text, no dot */}
         <div className="landing-hero-badge">
-          <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#39D98A", animation: "pulse-dot 1.5s ease infinite" }} />
-          Campus energy intelligence platform
+          Campus Energy Intelligence Platform
         </div>
 
-        {/* Title */}
-        <h1 className="landing-hero-title">
+        {/* ── Animated colour heading ── */}
+        <h1 className="landing-hero-title" style={{ fontWeight: 900, letterSpacing: -2 }}>
           Monitor every watt.<br />
-          <span className="gradient-text">Optimize everything.</span>
+          <span className="animated-gradient-heading">Optimize everything.</span>
         </h1>
 
         {/* Subtitle */}
@@ -487,23 +500,20 @@ export default function LandingPage({ onGetStarted, theme, toggleTheme }) {
         {/* CTA buttons */}
         <div className="landing-cta-group">
           <button className="landing-cta-primary" onClick={onGetStarted}>
-            <Zap size={17} fill="currentColor" />
             Get Started
-            <ArrowRight size={16} />
           </button>
           <button className="landing-cta-secondary" onClick={() => scrollTo("features")}>
-            <Play size={13} fill="currentColor" />
             See Features
           </button>
         </div>
 
-        {/* Stats — realistic numbers */}
+        {/* Stats */}
         <div className="hero-stats" id="stats">
           {[
-            { end: 12,  suffix: "+",  label: "Campuses Monitored" },
-            { end: 8,   suffix: "",   label: "Zones Tracked" },
-            { end: 28,  suffix: "%",  label: "Avg Cost Reduction" },
-            { end: 99,  suffix: "%",  label: "Uptime" },
+            { end: 12,  suffix: "+", label: "Campuses Monitored" },
+            { end: 8,   suffix: "",  label: "Zones Tracked" },
+            { end: 28,  suffix: "%", label: "Avg Cost Reduction" },
+            { end: 99,  suffix: "%", label: "Uptime" },
           ].map(({ end, suffix, label }) => (
             <div key={label} className="hero-stat">
               <span className="hero-stat-number">
@@ -522,15 +532,11 @@ export default function LandingPage({ onGetStarted, theme, toggleTheme }) {
         </div>
       </section>
 
-      {/* ── Ticker ──────────────────────────────────────────── */}
+      {/* ── Ticker ────────────────────────────────────────── */}
       <div className="ticker-wrapper">
         <div className="ticker-track">
           {[...TICKERS, ...TICKERS].map((text, i) => (
             <div key={i} className="ticker-item">
-              <span style={{
-                width: 4, height: 4, borderRadius: "50%",
-                background: "var(--accent-green)", display: "inline-block", flexShrink: 0,
-              }} />
               <span>{text}</span>
             </div>
           ))}
@@ -542,11 +548,11 @@ export default function LandingPage({ onGetStarted, theme, toggleTheme }) {
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div className="reveal" style={{ marginBottom: 52 }}>
             <div className="landing-section-tag">
-              <Activity size={11} /> Features
+              Features
             </div>
-            <h2 className="landing-section-title">
+            <h2 className="landing-section-title" style={{ fontWeight: 900, letterSpacing: -1 }}>
               Everything you need to<br />
-              <span className="gradient-text">master your energy grid</span>
+              <span className="animated-gradient-heading">master your energy grid</span>
             </h2>
             <p className="landing-section-sub">
               Six focused modules that transform raw meter data into
@@ -567,11 +573,18 @@ export default function LandingPage({ onGetStarted, theme, toggleTheme }) {
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div className="reveal" style={{ marginBottom: 52 }}>
             <div className="landing-section-tag">
-              <GitBranch size={11} /> Process
+              Process
             </div>
-            <h2 className="landing-section-title">
+            <h2 className="landing-section-title" style={{ fontWeight: 900, letterSpacing: -1 }}>
               Up and running in<br />
-              <span className="gradient-text-blue">three simple steps</span>
+              <span className="animated-gradient-heading" style={{
+                background: "linear-gradient(270deg, #58A6FF, #A78BFA, #22D3EE, #58A6FF)",
+                backgroundSize: "400% 400%",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                animation: "gradient-shift 5s ease infinite",
+              }}>three simple steps</span>
             </h2>
           </div>
 
@@ -582,6 +595,7 @@ export default function LandingPage({ onGetStarted, theme, toggleTheme }) {
                   background: `${color}12`,
                   border: `2px solid ${color}35`,
                   color, fontFamily: "'IBM Plex Mono', monospace",
+                  marginBottom: 14,
                 }}>
                   {num}
                 </div>
@@ -600,20 +614,20 @@ export default function LandingPage({ onGetStarted, theme, toggleTheme }) {
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div className="reveal" style={{ marginBottom: 44 }}>
             <div className="landing-section-tag">
-              <Star size={11} /> Proven Results
+              Proven Results
             </div>
-            <h2 className="landing-section-title" style={{ maxWidth: 540 }}>
+            <h2 className="landing-section-title" style={{ maxWidth: 540, fontWeight: 900, letterSpacing: -1 }}>
               Measurable impact,<br />
-              <span className="gradient-text">not just promises</span>
+              <span className="animated-gradient-heading">not just promises</span>
             </h2>
           </div>
 
           <div className="metric-strip reveal" data-delay="100">
             {[
-              { num: 240,  suffix: " MWh", label: "Energy tracked daily",      color: "#39D98A" },
-              { num: 124,  suffix: "",     label: "Anomalies flagged this month", color: "#FF6B6B" },
-              { num: 18,   suffix: "K",    label: "Cost savings (USD) this year", color: "#F0B429" },
-              { num: 94,   suffix: "%",    label: "Prediction accuracy",        color: "#58A6FF" },
+              { num: 240,  suffix: " MWh", label: "Energy tracked daily",         color: "#39D98A" },
+              { num: 124,  suffix: "",     label: "Anomalies flagged this month",  color: "#FF6B6B" },
+              { num: 18,   suffix: "K",    label: "Cost savings (USD) this year",  color: "#F0B429" },
+              { num: 94,   suffix: "%",    label: "Prediction accuracy",           color: "#58A6FF" },
             ].map(({ num, suffix, label, color }) => (
               <div key={label} className="metric-item">
                 <div style={{
@@ -645,15 +659,20 @@ export default function LandingPage({ onGetStarted, theme, toggleTheme }) {
                 "EnergyIQ cut our campus electricity bill by 28% in the first semester. The anomaly
                 alerts caught a faulty HVAC unit in the labs before it became a major repair."
               </p>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div>
-                  <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text-primary)" }}>Dr. Priya Sharma</div>
-                  <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Facilities Director, Engineering Campus</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text-primary)" }}>Dr. Priya Sharma</div>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Facilities Director, Engineering Campus</div>
+                  </div>
+                  <div style={{ marginLeft: "auto", display: "flex", gap: 3 }}>
+                    {[1,2,3,4,5].map(s => (
+                      <div key={s} style={{
+                        width: 8, height: 8, borderRadius: "50%",
+                        background: "#F0B429",
+                      }} />
+                    ))}
+                  </div>
                 </div>
-                <div style={{ display: "flex", gap: 2, marginLeft: "auto" }}>
-                  {[1,2,3,4,5].map(s => <Star key={s} size={13} color="#F0B429" fill="#F0B429" />)}
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -694,11 +713,11 @@ export default function LandingPage({ onGetStarted, theme, toggleTheme }) {
         <div className="landing-cta-bg" />
         <div className="reveal" style={{ position: "relative", zIndex: 1, maxWidth: 660, margin: "0 auto", textAlign: "center" }}>
           <div className="landing-section-tag" style={{ justifyContent: "center", margin: "0 auto 24px" }}>
-            <CheckCircle size={11} /> Open source
+            Open source
           </div>
-          <h2 className="landing-section-title" style={{ marginBottom: 18 }}>
+          <h2 className="landing-section-title" style={{ marginBottom: 18, fontWeight: 900, letterSpacing: -1 }}>
             Ready to optimize<br />
-            <span className="gradient-text">your campus energy?</span>
+            <span className="animated-gradient-heading">your campus energy?</span>
           </h2>
           <p style={{ fontSize: 16, color: "var(--text-secondary)", marginBottom: 36, lineHeight: 1.7 }}>
             Join campuses already using EnergyIQ to cut costs, reduce emissions,
@@ -706,9 +725,7 @@ export default function LandingPage({ onGetStarted, theme, toggleTheme }) {
           </p>
           <button className="landing-cta-primary" onClick={onGetStarted}
             style={{ fontSize: 16, padding: "16px 40px", margin: "0 auto" }}>
-            <Zap size={18} fill="currentColor" />
             Launch Dashboard
-            <ArrowUpRight size={16} />
           </button>
           <p style={{ marginTop: 18, fontSize: 12.5, color: "var(--text-muted)" }}>
             Runs locally · MIT open source · No cloud dependency
@@ -719,15 +736,12 @@ export default function LandingPage({ onGetStarted, theme, toggleTheme }) {
       {/* ── Footer ───────────────────────────────────────────── */}
       <footer className="landing-footer">
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{
-            width: 26, height: 26, borderRadius: 7,
-            background: "linear-gradient(135deg, #39D98A, #22D3EE)",
-            display: "flex", alignItems: "center", justifyContent: "center",
+          <span style={{
+            fontFamily: "'Space Grotesk', sans-serif",
+            fontSize: 16, fontWeight: 800,
           }}>
-            <Zap size={13} color="#080C10" fill="#080C10" />
-          </div>
-          <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
-            EnergyIQ
+            <span className="animated-gradient-heading">Energy</span>
+            <span style={{ color: "var(--text-primary)" }}>IQ</span>
           </span>
           <span style={{ fontSize: 12, color: "var(--text-muted)" }}>© 2026 · Campus Energy Intelligence</span>
         </div>

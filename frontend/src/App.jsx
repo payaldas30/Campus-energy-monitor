@@ -4,9 +4,7 @@ import {
   Tooltip, ResponsiveContainer, BarChart, Bar, Cell,
 } from "recharts";
 import {
-  Activity, AlertTriangle, TrendingUp, Zap, Leaf, ChevronRight,
-  WifiOff, Sun, Moon, LogOut, Bell, BarChart2, Sparkles, Menu, X,
-  Info,
+  WifiOff, Sun, Moon, LogOut, Bell, Menu, X,
 } from "lucide-react";
 import {
   fetchZones, fetchHistory, fetchSummary, fetchAnomalies,
@@ -92,25 +90,15 @@ function getGreeting() {
 }
 
 /* ── KPI Card ─────────────────────────────────────────────── */
-function Kpi({ icon: Icon, label, value, sub, accent, delay = 0 }) {
+function Kpi({ label, value, sub, accent, delay = 0 }) {
   const numericValue = typeof value === "string" ? parseFloat(value.replace(/[^0-9.]/g, "")) : value;
   const count = useCountUp(numericValue, 1500);
-  const displayValue = typeof value === "string" ? value.replace(/[0-9.]+/, count) : count;
 
   return (
-    <div className="kpi-card" style={{ animationDelay: `${delay}ms` }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-        <div style={{
-          width: 34, height: 34, borderRadius: 9,
-          background: `${accent}18`, border: `1px solid ${accent}30`,
-          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-        }}>
-          <Icon size={15} color={accent} />
-        </div>
-        <span style={{ fontSize: 11.5, color: "var(--text-secondary)", fontWeight: 500, lineHeight: 1.3 }}>
-          {label}
-        </span>
-      </div>
+    <div className="kpi-card" style={{ animationDelay: `${delay}ms`, borderTop: `3px solid ${accent}` }}>
+      <span style={{ fontSize: 11.5, color: "var(--text-secondary)", fontWeight: 500, lineHeight: 1.3, display: "block", marginBottom: 10 }}>
+        {label}
+      </span>
       <div style={{
         fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
         fontSize: 20, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4,
@@ -126,23 +114,16 @@ function Kpi({ icon: Icon, label, value, sub, accent, delay = 0 }) {
 }
 
 /* ── Panel wrapper ────────────────────────────────────────── */
-function Panel({ title, children, icon: Icon, accent, delay = 0 }) {
+function Panel({ title, children, accent, delay = 0 }) {
   return (
     <div className="panel" style={{ animationDelay: `${delay}ms` }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-        {Icon && (
-          <div style={{
-            width: 26, height: 26, borderRadius: 7,
-            background: `${accent || "#39D98A"}15`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <Icon size={12} color={accent || "#39D98A"} />
-          </div>
-        )}
+      <div style={{ marginBottom: 16 }}>
         <h3 style={{
           fontFamily: "'Space Grotesk', sans-serif",
-          fontSize: 13.5, fontWeight: 600, margin: 0, color: "var(--text-panel-title)",
-        }}>{title}</h3>
+          fontSize: 14, fontWeight: 800, margin: 0, letterSpacing: -0.2,
+        }}>
+          <span className="anim-heading-blue">{title}</span>
+        </h3>
       </div>
       {children}
     </div>
@@ -172,9 +153,9 @@ function CustomTooltip({ active, payload, label }) {
    NAV ITEMS
 ══════════════════════════════════════════════════════════════ */
 const NAV_ITEMS = [
-  { id: "dashboard", label: "Dashboard", icon: BarChart2 },
-  { id: "analytics", label: "Analytics", icon: TrendingUp },
-  { id: "about",     label: "About",     icon: Info },
+  { id: "dashboard", label: "Dashboard" },
+  { id: "analytics", label: "Analytics" },
+  { id: "about",     label: "About" },
 ];
 
 /* ══════════════════════════════════════════════════════════════
@@ -198,13 +179,6 @@ function MobileDrawer({ open, onClose, activeNav, setActiveNav, user, theme, tog
       <nav className="mobile-drawer">
         <div className="mobile-drawer-header">
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{
-              width: 34, height: 34, borderRadius: 9,
-              background: "linear-gradient(135deg, #39D98A, #22D3EE)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <Zap size={16} color="#080C10" fill="#080C10" />
-            </div>
             <span style={{
               fontFamily: "'Space Grotesk', sans-serif",
               fontSize: 15, fontWeight: 700, color: "var(--text-primary)",
@@ -218,13 +192,12 @@ function MobileDrawer({ open, onClose, activeNav, setActiveNav, user, theme, tog
           </button>
         </div>
 
-        {NAV_ITEMS.map(({ id, label, icon: NavIcon }) => (
+        {NAV_ITEMS.map(({ id, label }) => (
           <button
             key={id}
             className={`mobile-nav-item ${activeNav === id ? "active" : ""}`}
             onClick={() => { setActiveNav(id); onClose(); }}
           >
-            <NavIcon size={16} />
             {label}
           </button>
         ))}
@@ -434,15 +407,6 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
             </button>
           )}
 
-          <div style={{
-            width: 38, height: 38, borderRadius: 12,
-            background: "linear-gradient(135deg, #39D98A, #22D3EE)",
-            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-            boxShadow: "0 0 15px rgba(34,211,238,0.4)"
-          }}>
-            <Zap size={20} color="#080C10" fill="#080C10" />
-          </div>
-
           <div className={isMobile ? "" : ""}>
             <div style={{
               fontFamily: "'Space Grotesk', sans-serif",
@@ -457,7 +421,7 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
 
           {!isMobile && (
             <nav className="nav-pills" style={{ marginLeft: isMobile ? 0 : 16 }}>
-              {NAV_ITEMS.map(({ id, label, icon: NavIcon }) => (
+              {NAV_ITEMS.map(({ id, label }) => (
                 <button
                   key={id}
                   className="nav-pill"
@@ -471,18 +435,7 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
                     position: "relative",
                   }}
                 >
-                  <NavIcon size={13} />
-                  {!isTablet && <span className="nav-label">{label}</span>}
-                  {id === "alerts" && (summary?.anomaly_count ?? 0) > 0 && (
-                    <span style={{
-                      position:"absolute", top:-4, right:-4,
-                      minWidth:16, height:16, borderRadius:99,
-                      background:"#FF6B6B", color:"#fff",
-                      fontSize:9, fontWeight:700, fontFamily:"'IBM Plex Mono',monospace",
-                      display:"flex", alignItems:"center", justifyContent:"center",
-                      padding:"0 3px", border:"1.5px solid var(--bg-page)",
-                    }}>{summary.anomaly_count > 99 ? "99+" : summary.anomaly_count}</span>
-                  )}
+                  <span className="nav-label">{label}</span>
                 </button>
               ))}
             </nav>
@@ -545,9 +498,9 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
           <>
             <div style={{ marginBottom:20 }}>
               <h2 style={{
-                fontFamily:"'Space Grotesk',sans-serif", fontSize: isMobile ? 18 : 22,
-                fontWeight:700, color:"var(--text-primary)", margin:"0 0 4px",
-              }}>Analytics</h2>
+                fontFamily:"'Space Grotesk',sans-serif", fontSize: isMobile ? 20 : 26,
+                fontWeight:900, color:"var(--text-primary)", margin:"0 0 4px", letterSpacing:-0.5,
+              }}><span className="anim-heading">Analytics</span></h2>
               <p style={{ fontSize:13, color:"var(--text-muted)" }}>
                 Patterns, baselines, and load curves — the investigative view.
               </p>
@@ -570,9 +523,9 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
           <>
             <div style={{ marginBottom:20 }}>
               <h2 style={{
-                fontFamily:"'Space Grotesk',sans-serif", fontSize: isMobile ? 18 : 22,
-                fontWeight:700, color:"var(--text-primary)", margin:"0 0 4px",
-              }}>About</h2>
+                fontFamily:"'Space Grotesk',sans-serif", fontSize: isMobile ? 20 : 26,
+                fontWeight:900, color:"var(--text-primary)", margin:"0 0 4px", letterSpacing:-0.5,
+              }}><span className="anim-heading">About</span></h2>
               <p style={{ fontSize:13, color:"var(--text-muted)" }}>
                 Platform overview, technology stack and quick start guide.
               </p>
@@ -588,11 +541,11 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
           <div style={{ minWidth: 0 }}>
             <h1 style={{
               fontFamily: "'Space Grotesk', sans-serif",
-              fontWeight: 800, fontSize: isMobile ? 18 : 24,
-              color: "var(--text-primary)", letterSpacing: -0.5,
+              fontWeight: 900, fontSize: isMobile ? 20 : 26,
+              color: "var(--text-primary)", letterSpacing: -1,
               margin: 0, lineHeight: 1.2,
             }}>
-              {getGreeting()}, <span className="gradient-text">{user?.name?.split(" ")[0] ?? "Admin"}</span>
+              {getGreeting()}, <span className="anim-heading">{user?.name?.split(" ")[0] ?? "Admin"}</span>
             </h1>
             <p style={{ margin: "4px 0 0 0", fontSize: 13, color: "var(--text-secondary)" }}>
               Your campus energy grid is currently operating <span style={{ color: "#39D98A", fontWeight: 600 }}>efficiently</span>.
@@ -609,16 +562,16 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
 
         {/* ── KPI row ───────────────────────────────────── */}
         <div className="kpi-row">
-          <Kpi icon={Zap} label="14-day total" accent="#39D98A" delay={0}
+          <Kpi label="14-day total" accent="#39D98A" delay={0}
             value={summary ? `${summary.total_kwh.toLocaleString()} kWh` : "—"}
             sub={summary ? `~${summary.avg_daily_kwh.toLocaleString()} kWh/day` : ""} />
-          <Kpi icon={TrendingUp} label="Forecast peak" accent="#F0B429" delay={80}
+          <Kpi label="Forecast peak" accent="#F0B429" delay={80}
             value={summary?.forecast_peak_hour != null ? `${summary.forecast_peak_kw} kW` : "—"}
             sub={summary?.forecast_peak_hour != null ? `at ${summary.forecast_peak_hour}:00` : ""} />
-          <Kpi icon={AlertTriangle} label="Anomalies" accent="#FF6B6B" delay={160}
+          <Kpi label="Anomalies" accent="#FF6B6B" delay={160}
             value={summary ? `${summary.anomaly_count}` : "—"}
             sub="z-score > 2.5" />
-          <Kpi icon={Activity} label="Zones" accent="#58A6FF" delay={240}
+          <Kpi label="Zones" accent="#58A6FF" delay={240}
             value={`${zones.length}`}
             sub="sub-metered live" />
         </div>
@@ -627,7 +580,7 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
         <div className="main-grid">
 
           {/* Zone usage chart */}
-          <Panel title="Zone usage — live" icon={BarChart2} accent="#39D98A" delay={0}>
+          <Panel title="Zone usage — live" accent="#39D98A" delay={0}>
             <div style={{
               display: "flex", gap: 7, marginBottom: 14,
               flexWrap: "wrap", overflowX: isMobile ? "auto" : "visible",
@@ -687,7 +640,7 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
             {/* Anomalies chart */}
-            <Panel title="Anomalies by zone" icon={AlertTriangle} accent="#FF6B6B" delay={100}>
+            <Panel title="Anomalies by zone" accent="#FF6B6B" delay={100}>
               {!anomalies ? (
                 <div className="skeleton" style={{ height: barHeight }} />
               ) : (
@@ -712,7 +665,7 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
             </Panel>
 
             {/* Recommendations */}
-            <Panel title="Smart interventions" icon={Sparkles} accent="#A78BFA" delay={200}>
+            <Panel title="Smart interventions" accent="#A78BFA" delay={200}>
               <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
                 {recs.map((r, i) => (
                   <div key={i} className="rec-card" style={{ animationDelay: `${i * 80}ms` }}>
@@ -736,7 +689,7 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
                       background: "rgba(88,166,255,0.06)", border: "1px solid rgba(88,166,255,0.2)",
                       borderRadius: 999, padding: "2px 8px",
                     }}>
-                      {r.tag} <ChevronRight size={9} />
+                      {r.tag}
                     </span>
                   </div>
                 ))}
@@ -767,12 +720,6 @@ function Dashboard({ user, theme, toggleTheme, onLogout }) {
         width: "100%",
       }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--text-muted)", fontSize: 13, fontWeight: 500 }}>
-            <div style={{
-              width: 24, height: 24, borderRadius: "50%", background: "var(--glow-green)",
-              display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--accent-green)"
-            }}>
-              <Leaf size={12} color="var(--accent-green)" />
-            </div>
             <span className="gradient-text">EnergyIQ Energy Monitor © 2026</span>
           </div>
           <div style={{

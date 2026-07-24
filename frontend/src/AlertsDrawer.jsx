@@ -368,9 +368,9 @@ export default function AlertsDrawer({ open, onClose, anomalyCount = 0 }) {
               <div>
                 <h2 style={{
                   fontFamily:"'Space Grotesk',sans-serif",
-                  fontSize:20, fontWeight:700, margin:0, color:"var(--text-primary)",
+                  fontSize:22, fontWeight:900, margin:0, letterSpacing:-0.5,
                 }}>
-                  Alerts
+                  <span className="anim-heading">Alerts</span>
                   {total > 0 && (
                     <span style={{
                       marginLeft:10, fontSize:12, fontWeight:700,
